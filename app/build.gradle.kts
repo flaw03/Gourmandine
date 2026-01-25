@@ -1,16 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.android.application")
+    id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
 android {
-    namespace = "com.example.reservation"
+    namespace = "com.assgui.gourmandine"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.reservation"
+        applicationId = "com.assgui.gourmandine"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -47,6 +49,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    implementation("com.google.firebase:firebase-analytics")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
