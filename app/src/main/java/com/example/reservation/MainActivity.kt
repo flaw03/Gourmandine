@@ -4,31 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import com.example.reservation.ui.theme.ReservationTheme
@@ -62,17 +55,43 @@ fun ReservationApp() {
                     },
                     label = { Text(it.label) },
                     selected = it == currentDestination,
-                    onClick = { currentDestination = it }
+                    onClick = {
+                        currentDestination = it;
+                        println("Navigated to ${it.label} screen")
+                    }
                 )
             }
         }
     ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = User("Assane", "fsdf"),
-                modifier = Modifier.padding(innerPadding)
-            )
+        when (currentDestination) {
+            AppDestinations.HOME -> HomeScreen()
+            AppDestinations.RESERVATION ->ReservationScreen()
+            AppDestinations.PROFILE ->ProfileScreen()
         }
+    }
+}
+
+@Composable
+fun ProfileScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Mon Profil", style = MaterialTheme.typography.headlineLarge)
+        Text("Page profil à compléter")
+    }
+}
+
+@Composable
+fun ReservationScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Réservations", style = MaterialTheme.typography.headlineLarge)
+        Text("Vos réservations apparaîtront ici")
+    }
+}
+
+@Composable
+fun HomeScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Accueil", style = MaterialTheme.typography.headlineLarge)
+        Text("Bienvenue dans l'application de réservation")
     }
 }
 
@@ -81,33 +100,9 @@ enum class AppDestinations(
     val icon: ImageVector,
 ) {
     HOME("Home", Icons.Default.Home),
-    RESERVATION("Reservation", Icons.Default.Favorite),
+    RESERVATION("Reservation", Icons.Default.DateRange),
     PROFILE("Profile", Icons.Default.AccountBox),
 }
 
 data class User(val name: String, val mail: String)
 
-@Composable
-fun Greeting(name: User, modifier: Modifier = Modifier) {
-    var count by remember { mutableStateOf(0) }
-    Column(
-        modifier = modifier.padding(16.dp)
-    ) {
-        Text(text = "Bievenue ${name.name}!",
-            style = MaterialTheme.typography.headlineMedium)
-        Text(text = "Mail ${name.mail}",
-            style = MaterialTheme.typography.bodyMedium )
-        Button(
-            onClick = { count++ },
-            modifier = Modifier.padding(top = 8.dp)
-        ) {
-            Text("Logout")
-            }
-        Text(text="Vous avez cliqué $count fois.",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        TextField()
-
-    }
-
-}
