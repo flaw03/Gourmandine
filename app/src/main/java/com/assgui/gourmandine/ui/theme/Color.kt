@@ -1,4 +1,4 @@
-package com.example.reservation.ui.theme
+package com.assgui.gourmandine.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
