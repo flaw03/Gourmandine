@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "588683615939",
+    "project_id": "gourmandine-2ffb5",
+    "storage_bucket": "gourmandine-2ffb5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:588683615939:android:3c5cc490f5165a4648cc76",
+        "android_client_info": {
+          "package_name": "com.assgui.gourmandine"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKvL6V4mQ3UPnHm3TRyWGV5hBu6ENvdy0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
