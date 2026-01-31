@@ -28,6 +28,7 @@ enum class AuthScreen {
 
 @Composable
 fun ProfileScreen(
+    onBack: () -> Unit = {},
     viewModel: AuthViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()

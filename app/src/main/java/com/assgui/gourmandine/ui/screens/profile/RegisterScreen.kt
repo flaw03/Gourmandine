@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,7 +96,7 @@ fun RegisterScreen(
             label = { Text("Mot de passe") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            keyboardOptions =
+//            keyboardOptions =
             isError = uiState.passwordError != null,
             supportingText = uiState.passwordError?.let { { Text(it) } }
         )

@@ -4,9 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,10 +15,14 @@ import com.assgui.gourmandine.ui.screens.home.HomeScreen
 import com.assgui.gourmandine.ui.screens.profile.ProfileScreen
 import com.assgui.gourmandine.ui.screens.reservation.ReservationScreen
 import com.assgui.gourmandine.ui.theme.GourmandineTheme
+import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!Places.isInitialized()) {
+            Places.initializeWithNewPlacesApiEnabled(applicationContext, BuildConfig.MAPS_API_KEY)
+        }
         enableEdgeToEdge()
         setContent {
             GourmandineTheme {
@@ -36,27 +37,16 @@ class MainActivity : ComponentActivity() {
 fun GourmandineApp() {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            AppDestinations.entries.forEach { destination ->
-                item(
-                    icon = {
-                        Icon(
-                            imageVector = destination.icon,
-                            contentDescription = destination.label
-                        )
-                    },
-                    label = { Text(destination.label) },
-                    selected = destination == currentDestination,
-                    onClick = { currentDestination = destination }
-                )
-            }
-        }
-    ) {
-        when (currentDestination) {
-            AppDestinations.HOME -> HomeScreen()
-            AppDestinations.RESERVATION -> ReservationScreen()
-            AppDestinations.PROFILE -> ProfileScreen()
-        }
+    when (currentDestination) {
+        AppDestinations.HOME -> HomeScreen(
+            onProfileClick = { currentDestination = AppDestinations.PROFILE },
+            onReservationClick = { currentDestination = AppDestinations.RESERVATION }
+        )
+        AppDestinations.RESERVATION -> ReservationScreen(
+            onBack = { currentDestination = AppDestinations.HOME }
+        )
+        AppDestinations.PROFILE -> ProfileScreen(
+            onBack = { currentDestination = AppDestinations.HOME }
+        )
     }
 }
