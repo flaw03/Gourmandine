@@ -13,5 +13,6 @@ data class Restaurant(
     val longitude: Double = 0.0,
     val address: String = "",
     val description: String = "",
-    val phoneNumber: String = ""
+    val phoneNumber: String = "",
+    val cuisineType: String = ""
 )

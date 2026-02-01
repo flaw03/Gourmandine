@@ -113,6 +113,14 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(uiState.clusterBounds) {
+        uiState.clusterBounds?.let { bounds ->
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(bounds, 100)
+            )
+        }
+    }
+
     LaunchedEffect(uiState.restaurants.isEmpty()) {
         if (uiState.restaurants.isEmpty()) bottomSheetState.partialExpand()
     }
@@ -134,8 +142,7 @@ fun HomeScreen(
                         viewModel.onSearchSubmit(uiState.searchQuery)
                         focusManager.clearFocus()
                     },
-                    onCardClick = viewModel::onCardClick,
-                    onViewDetail = viewModel::onViewDetail
+                    onCardClick = viewModel::onCardClick
                 )
             }
         ) {
@@ -145,6 +152,8 @@ fun HomeScreen(
                 cameraPositionState = cameraPositionState,
                 mapBottomPadding = with(density) { mapBottomPaddingPx.toDp() },
                 onMarkerClick = viewModel::onMarkerClick,
+                onMarkerDetailClick = viewModel::onMarkerDetailClick,
+                onClusterClick = viewModel::onClusterClick,
                 onProfileClick = onProfileClick,
                 onReservationClick = onReservationClick
             )
@@ -184,8 +193,7 @@ private fun SheetContent(
     listState: androidx.compose.foundation.lazy.LazyListState,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
-    onCardClick: (String) -> Unit,
-    onViewDetail: (String) -> Unit
+    onCardClick: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -236,8 +244,7 @@ private fun SheetContent(
                         RestaurantCard(
                             restaurant = restaurant,
                             isSelected = restaurant.id == uiState.selectedRestaurantId,
-                            onClick = { onCardClick(restaurant.id) },
-                            onViewDetail = { onViewDetail(restaurant.id) }
+                            onClick = { onCardClick(restaurant.id) }
                         )
                     }
                     item { Spacer(modifier = Modifier.height(16.dp)) }

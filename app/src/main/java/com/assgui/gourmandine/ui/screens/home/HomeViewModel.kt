@@ -7,6 +7,7 @@ import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.data.repository.PlacesRepository
 import com.assgui.gourmandine.data.repository.PlacesResult
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,8 @@ data class HomeUiState(
     val errorMessage: String? = null,
     val cameraPosition: LatLng = LatLng(48.8566, 2.3522),
     val cameraZoom: Float = 14f,
-    val detailRestaurant: Restaurant? = null
+    val detailRestaurant: Restaurant? = null,
+    val clusterBounds: LatLngBounds? = null
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -111,9 +113,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onViewDetail(id: String) {
+    fun onMarkerDetailClick(id: String) {
         val restaurant = _uiState.value.restaurants.find { it.id == id } ?: return
         _uiState.update { it.copy(detailRestaurant = restaurant) }
+    }
+
+    fun onClusterClick(bounds: LatLngBounds) {
+        _uiState.update { it.copy(clusterBounds = bounds) }
     }
 
     fun onDismissDetail() {

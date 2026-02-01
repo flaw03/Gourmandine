@@ -1,8 +1,5 @@
 package com.assgui.gourmandine.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +21,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +41,6 @@ fun RestaurantCard(
     restaurant: Restaurant,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    onViewDetail: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -177,7 +172,7 @@ fun RestaurantCard(
                             )
                         }
 
-                        if (restaurant.country.isNotBlank()) {
+                        if (restaurant.cuisineType.isNotBlank()) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -189,7 +184,7 @@ fun RestaurantCard(
                                         .background(OrangeAccent)
                                 )
                                 Text(
-                                    text = restaurant.country,
+                                    text = restaurant.cuisineType,
                                     fontSize = 13.sp,
                                     color = Color.DarkGray,
                                     maxLines = 1
@@ -200,34 +195,6 @@ fun RestaurantCard(
                 }
             }
 
-            // "More details" button — only visible when selected
-            AnimatedVisibility(
-                visible = isSelected,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
-                ) {
-                    TextButton(
-                        onClick = onViewDetail,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(36.dp)
-                            .background(OrangeAccent, RoundedCornerShape(10.dp)),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(
-                            text = "More details",
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -242,6 +209,7 @@ private fun RestaurantCardPreview() {
             rating = 4.6,
             reviewCount = 120,
             country = "USA",
+            cuisineType = "Italian",
             priceLevel = 2,
             isOpen = true
         ),
