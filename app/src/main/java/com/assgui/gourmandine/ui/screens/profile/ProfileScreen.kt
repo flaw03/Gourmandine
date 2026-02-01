@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,6 +52,7 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var currentScreen by remember { mutableStateOf(AuthScreen.LOGIN) }
+    val context = LocalContext.current
 
     if (uiState.isLoggedIn) {
         ProfileContent(
@@ -65,6 +67,7 @@ fun ProfileScreen(
                 onEmailChange = viewModel::onEmailChange,
                 onPasswordChange = viewModel::onPasswordChange,
                 onLoginClick = viewModel::login,
+                onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                 onNavigateToRegister = {
                     viewModel.clearForm()
                     currentScreen = AuthScreen.REGISTER
@@ -79,6 +82,7 @@ fun ProfileScreen(
                 onPasswordChange = viewModel::onPasswordChange,
                 onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
                 onRegisterClick = viewModel::register,
+                onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                 onNavigateToLogin = {
                     viewModel.clearForm()
                     currentScreen = AuthScreen.LOGIN

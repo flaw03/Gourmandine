@@ -16,10 +16,15 @@ import com.assgui.gourmandine.ui.screens.profile.ProfileScreen
 import com.assgui.gourmandine.ui.screens.reservation.ReservationScreen
 import com.assgui.gourmandine.ui.theme.GourmandineTheme
 import com.google.android.libraries.places.api.Places
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        println(FirebaseAuth.getInstance())
+
         if (!Places.isInitialized()) {
             Places.initializeWithNewPlacesApiEnabled(applicationContext, BuildConfig.MAPS_API_KEY)
         }
@@ -42,9 +47,11 @@ fun GourmandineApp() {
             onProfileClick = { currentDestination = AppDestinations.PROFILE },
             onReservationClick = { currentDestination = AppDestinations.RESERVATION }
         )
+
         AppDestinations.RESERVATION -> ReservationScreen(
             onBack = { currentDestination = AppDestinations.HOME }
         )
+
         AppDestinations.PROFILE -> ProfileScreen(
             onBack = { currentDestination = AppDestinations.HOME }
         )

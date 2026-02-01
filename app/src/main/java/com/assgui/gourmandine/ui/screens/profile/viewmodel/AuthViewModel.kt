@@ -1,5 +1,6 @@
 package com.assgui.gourmandine.ui.screens.profile.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assgui.gourmandine.data.model.User
@@ -210,6 +211,49 @@ class AuthViewModel(
                                 )
                             }
                         }
+                }
+                is AuthResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun signInWithGoogle(context: Context) {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+        viewModelScope.launch {
+            when (val result = authRepository.signInWithGoogle(context)) {
+                is AuthResult.Success -> {
+                    val firebaseUser = result.user
+                    // Créer le profil Firestore si nouveau
+                    val existingUser = userRepository.getUser(firebaseUser.uid).getOrNull()
+                    if (existingUser == null) {
+                        val displayName = firebaseUser.displayName ?: ""
+                        val parts = displayName.split(" ", limit = 2)
+                        val user = User(
+                            uid = firebaseUser.uid,
+                            prenom = parts.getOrElse(0) { "" },
+                            nom = parts.getOrElse(1) { "" },
+                            email = firebaseUser.email ?: ""
+                        )
+                        userRepository.createUser(user)
+                    }
+
+                    loadUserProfile(firebaseUser.uid)
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isLoggedIn = true,
+                            userEmail = firebaseUser.email
+                        )
+                    }
                 }
                 is AuthResult.Error -> {
                     _uiState.update {

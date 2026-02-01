@@ -12,7 +12,20 @@
           "package_name": "com.assgui.gourmandine"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "588683615939-s52htfj19hg46kbbuis47f1asd9hfveh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.assgui.gourmandine",
+            "certificate_hash": "bbebe633497e82f75c5a12f5ba815b23743d14c6"
+          }
+        },
+        {
+          "client_id": "588683615939-2g9lpc9p1t804jk689tn9vrbjak3ni6k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDKvL6V4mQ3UPnHm3TRyWGV5hBu6ENvdy0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "588683615939-2g9lpc9p1t804jk689tn9vrbjak3ni6k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
