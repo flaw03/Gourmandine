@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.assgui.gourmandine.data.model.Restaurant
+import com.assgui.gourmandine.data.model.Review
 import com.assgui.gourmandine.data.repository.PlacesRepository
 import com.assgui.gourmandine.data.repository.PlacesResult
+import com.assgui.gourmandine.data.repository.ReviewRepository
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,12 +25,14 @@ data class HomeUiState(
     val cameraPosition: LatLng = LatLng(48.8566, 2.3522),
     val cameraZoom: Float = 14f,
     val detailRestaurant: Restaurant? = null,
-    val clusterBounds: LatLngBounds? = null
+    val clusterBounds: LatLngBounds? = null,
+    val detailReviews: List<Review> = emptyList()
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val placesRepository = PlacesRepository.create(application)
+    private val reviewRepository = ReviewRepository()
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -100,7 +104,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val alreadySelected = _uiState.value.selectedRestaurantId == id
         if (alreadySelected) {
             // Already selected → open detail
-            _uiState.update { it.copy(detailRestaurant = restaurant) }
+            _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList()) }
+            loadReviews(id)
         } else {
             // Not selected → select + move camera
             _uiState.update {
@@ -115,7 +120,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onMarkerDetailClick(id: String) {
         val restaurant = _uiState.value.restaurants.find { it.id == id } ?: return
-        _uiState.update { it.copy(detailRestaurant = restaurant) }
+        _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList()) }
+        loadReviews(id)
     }
 
     fun onClusterClick(bounds: LatLngBounds) {
@@ -123,7 +129,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onDismissDetail() {
-        _uiState.update { it.copy(detailRestaurant = null) }
+        _uiState.update { it.copy(detailRestaurant = null, detailReviews = emptyList()) }
+    }
+
+    private fun loadReviews(restaurantId: String) {
+        viewModelScope.launch {
+            reviewRepository.getReviewsForRestaurant(restaurantId)
+                .onSuccess { reviews ->
+                    _uiState.update { it.copy(detailReviews = reviews) }
+                }
+        }
     }
 
     fun clearError() {

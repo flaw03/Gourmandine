@@ -162,6 +162,7 @@ fun HomeScreen(
         RestaurantDetailSheet(
             restaurant = uiState.detailRestaurant,
             visible = uiState.detailRestaurant != null,
+            reviews = uiState.detailReviews,
             onDismiss = viewModel::onDismissDetail,
             modifier = Modifier.fillMaxSize()
         )
