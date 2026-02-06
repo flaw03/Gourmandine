@@ -20,6 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -31,7 +34,9 @@ fun SearchBarRow(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
+    onFocusChanged: (Boolean) -> Unit = {}
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -41,7 +46,15 @@ fun SearchBarRow(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .onFocusChanged { focusState ->
+                    onFocusChanged(focusState.isFocused)
+                }
+                .then(
+                    if (focusRequester != null) Modifier.focusRequester(focusRequester)
+                    else Modifier
+                ),
             placeholder = { Text("Search", color = Color.Gray) },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
@@ -50,7 +63,7 @@ fun SearchBarRow(
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = Color(0xFFE0E0E0),
-                focusedBorderColor = OrangeAccent
+                focusedBorderColor = Color(0xFFE0E0E0)
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch() })

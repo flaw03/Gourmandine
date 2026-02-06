@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,9 +36,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -55,6 +57,7 @@ import com.assgui.gourmandine.ui.screens.home.components.SearchBarRow
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.launch
 
 private val OrangeAccent = Color(0xFFFF6B35)
 
@@ -68,9 +71,11 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val sheetMaxHeight = screenHeight * 0.5f
+    val sheetMaxHeight = screenHeight * 0.9f
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(uiState.cameraPosition, uiState.cameraZoom)
@@ -88,11 +93,16 @@ fun HomeScreen(
     val imeHeightPx = WindowInsets.ime.getBottom(density)
     val isKeyboardOpen by remember { derivedStateOf { imeHeightPx > 0 } }
 
+    // Gestion des états avec événements
     LaunchedEffect(isKeyboardOpen) {
-        if (isKeyboardOpen) bottomSheetState.expand()
+        if (isKeyboardOpen) {
+            // Événement: clavier ouvert → étendre le sheet en top/full
+            bottomSheetState.expand()
+        }
     }
 
     LaunchedEffect(bottomSheetState.currentValue) {
+        // Événement: sheet revient au milieu → retirer le focus
         if (bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
             focusManager.clearFocus()
         }
@@ -111,11 +121,16 @@ fun HomeScreen(
     }
 
     LaunchedEffect(isSheetExpanded) {
+        // Événement: sheet étendu en top → ajuster la caméra
         cameraPositionState.animate(
             CameraUpdateFactory.newCameraPosition(
                 CameraPosition.fromLatLngZoom(uiState.cameraPosition, uiState.cameraZoom)
             )
         )
+        // Événement: sheet étendu manuellement (swipe up) → donner le focus
+        if (isSheetExpanded && !isKeyboardOpen) {
+            focusRequester.requestFocus()
+        }
     }
 
     LaunchedEffect(uiState.selectedRestaurantId) {
@@ -150,12 +165,20 @@ fun HomeScreen(
                     uiState = uiState,
                     sheetMaxHeight = sheetMaxHeight,
                     listState = listState,
+                    focusRequester = focusRequester,
                     onQueryChange = viewModel::onSearchQueryChange,
                     onSearch = {
                         viewModel.onSearchSubmit(uiState.searchQuery)
                         focusManager.clearFocus()
                     },
-                    onCardClick = viewModel::onCardClick
+                    onCardClick = viewModel::onCardClick,
+                    onSearchFocusChanged = { isFocused ->
+                        if (isFocused) {
+                            coroutineScope.launch {
+                                bottomSheetState.expand()
+                            }
+                        }
+                    }
                 )
             }
         ) {
@@ -207,25 +230,34 @@ private fun SheetContent(
     uiState: HomeUiState,
     sheetMaxHeight: androidx.compose.ui.unit.Dp,
     listState: androidx.compose.foundation.lazy.LazyListState,
+    focusRequester: FocusRequester,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
-    onCardClick: (String) -> Unit
+    onCardClick: (String) -> Unit,
+    onSearchFocusChanged: (Boolean) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = sheetMaxHeight)
-            .padding(horizontal = 16.dp)
-            .imePadding()
     ) {
-        SearchBarRow(
-            query = uiState.searchQuery,
-            onQueryChange = onQueryChange,
-            onSearch = onSearch
-        )
+        // Barre de recherche toujours en haut
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            SearchBarRow(
+                query = uiState.searchQuery,
+                onQueryChange = onQueryChange,
+                onSearch = onSearch,
+                focusRequester = focusRequester,
+                onFocusChanged = onSearchFocusChanged
+            )
+        }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
+        // Zone de contenu scrollable
         when {
             uiState.isLoading -> {
                 Box(
@@ -257,9 +289,28 @@ private fun SheetContent(
             else -> {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Section suggestions (quand on tape)
+                    if (uiState.searchQuery.isNotEmpty() && uiState.searchQuery.length >= 2) {
+                        item {
+                            Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
+                                Text(
+                                    text = "Suggestions",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+
+                    // Liste des restaurants
                     items(items = uiState.restaurants, key = { it.id }) { restaurant ->
                         RestaurantCard(
                             restaurant = restaurant,
@@ -267,7 +318,6 @@ private fun SheetContent(
                             onClick = { onCardClick(restaurant.id) }
                         )
                     }
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
             }
         }
