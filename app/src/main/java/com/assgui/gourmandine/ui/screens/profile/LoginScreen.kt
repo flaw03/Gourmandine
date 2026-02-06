@@ -44,8 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.assgui.gourmandine.R
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthUiState
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 @Composable
 fun LoginScreen(
@@ -72,7 +72,7 @@ fun LoginScreen(
                 .align(Alignment.TopStart)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFF0F0F0))
+                .background(AppColors.BackgroundGray)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -92,13 +92,13 @@ fun LoginScreen(
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(OrangeAccent.copy(alpha = 0.15f), RoundedCornerShape(20.dp)),
+                .background(AppColors.OrangeAccent.copy(alpha = 0.15f), RoundedCornerShape(20.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Restaurant,
                 contentDescription = null,
-                tint = OrangeAccent,
+                tint = AppColors.OrangeAccent,
                 modifier = Modifier.size(40.dp)
             )
         }
@@ -131,13 +131,13 @@ fun LoginScreen(
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Color(0xFFE0E0E0),
-                focusedBorderColor = OrangeAccent,
-                cursorColor = OrangeAccent,
-                focusedLabelColor = OrangeAccent
+                unfocusedBorderColor = AppColors.MediumGray,
+                focusedBorderColor = AppColors.OrangeAccent,
+                cursorColor = AppColors.OrangeAccent,
+                focusedLabelColor = AppColors.OrangeAccent
             ),
             isError = uiState.emailError != null,
-            supportingText = uiState.emailError?.let { { Text(it, color = Color(0xFFF44336)) } }
+            supportingText = uiState.emailError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -153,22 +153,22 @@ fun LoginScreen(
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Color(0xFFE0E0E0),
-                focusedBorderColor = OrangeAccent,
-                cursorColor = OrangeAccent,
-                focusedLabelColor = OrangeAccent
+                unfocusedBorderColor = AppColors.MediumGray,
+                focusedBorderColor = AppColors.OrangeAccent,
+                cursorColor = AppColors.OrangeAccent,
+                focusedLabelColor = AppColors.OrangeAccent
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
             isError = uiState.passwordError != null,
-            supportingText = uiState.passwordError?.let { { Text(it, color = Color(0xFFF44336)) } }
+            supportingText = uiState.passwordError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         if (uiState.errorMessage != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = uiState.errorMessage,
-                color = Color(0xFFF44336),
+                color = AppColors.Red,
                 fontSize = 13.sp
             )
         }
@@ -183,8 +183,8 @@ fun LoginScreen(
             enabled = !uiState.isLoading,
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = OrangeAccent,
-                disabledContainerColor = OrangeAccent.copy(alpha = 0.5f)
+                containerColor = AppColors.OrangeAccent,
+                disabledContainerColor = AppColors.OrangeAccent.copy(alpha = 0.5f)
             )
         ) {
             if (uiState.isLoading) {
@@ -213,7 +213,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .weight(1f)
                     .height(1.dp)
-                    .background(Color(0xFFE0E0E0))
+                    .background(AppColors.MediumGray)
             )
             Text(
                 text = "  ou  ",
@@ -224,7 +224,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .weight(1f)
                     .height(1.dp)
-                    .background(Color(0xFFE0E0E0))
+                    .background(AppColors.MediumGray)
             )
         }
 
@@ -237,7 +237,7 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+            border = BorderStroke(1.dp, AppColors.MediumGray),
             enabled = !uiState.isLoading
         ) {
             Icon(
@@ -265,7 +265,7 @@ fun LoginScreen(
             )
             Text(
                 text = "S'inscrire",
-                color = OrangeAccent,
+                color = AppColors.OrangeAccent,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp
             )

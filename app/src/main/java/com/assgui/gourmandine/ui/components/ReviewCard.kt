@@ -34,8 +34,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 @Composable
 fun ReviewCard(
@@ -46,7 +46,7 @@ fun ReviewCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color(0xFFFFF3ED), RoundedCornerShape(16.dp))
+            .background(AppColors.OrangeBackground, RoundedCornerShape(16.dp))
             .padding(12.dp)
     ) {
         if (compact) {

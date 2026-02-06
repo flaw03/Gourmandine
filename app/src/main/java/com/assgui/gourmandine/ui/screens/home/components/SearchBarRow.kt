@@ -26,8 +26,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 @Composable
 fun SearchBarRow(
@@ -62,8 +62,8 @@ fun SearchBarRow(
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Color(0xFFE0E0E0),
-                focusedBorderColor = Color(0xFFE0E0E0)
+                unfocusedBorderColor = AppColors.MediumGray,
+                focusedBorderColor = AppColors.MediumGray
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch() })
@@ -73,7 +73,7 @@ fun SearchBarRow(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(OrangeAccent),
+                .background(AppColors.OrangeAccent),
             contentAlignment = Alignment.Center
         ) {
             Icon(

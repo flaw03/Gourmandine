@@ -44,8 +44,8 @@ import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.clustering.Clustering
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 data class RestaurantClusterItem(
     val restaurant: Restaurant
@@ -70,6 +70,7 @@ fun RestaurantMapSection(
     onReservationClick: () -> Unit,
     onMyLocationClick: () -> Unit = {},
     userLocation: LatLng? = null,
+    isLocationButtonVisible: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedRestaurant = remember(restaurants, selectedRestaurantId) {
@@ -147,12 +148,14 @@ fun RestaurantMapSection(
             modifier = Modifier.align(Alignment.TopStart)
         )
 
-        MapLocationButton(
-            onLocationClick = onMyLocationClick,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = mapBottomPadding + 16.dp)
-        )
+        if (isLocationButtonVisible) {
+            MapLocationButton(
+                onLocationClick = onMyLocationClick,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = mapBottomPadding + 16.dp)
+            )
+        }
     }
 }
 
@@ -161,7 +164,7 @@ private fun UnselectedMarker() {
     Box(
         modifier = Modifier
             .size(20.dp)
-            .background(OrangeAccent, CircleShape)
+            .background(AppColors.OrangeAccent, CircleShape)
             .border(2.dp, Color.White, CircleShape)
     )
 }
@@ -171,7 +174,7 @@ private fun UserLocationMarker() {
     Box(
         modifier = Modifier
             .size(24.dp)
-            .background(Color(0xFF4285F4), CircleShape)
+            .background(AppColors.GoogleBlue, CircleShape)
             .border(3.dp, Color.White, CircleShape)
     )
 }
@@ -181,7 +184,7 @@ private fun ClusterMarker(count: Int) {
     Box(
         modifier = Modifier
             .size(40.dp)
-            .background(OrangeAccent, CircleShape)
+            .background(AppColors.OrangeAccent, CircleShape)
             .border(2.5.dp, Color.White, CircleShape),
         contentAlignment = Alignment.Center
     ) {
@@ -213,7 +216,7 @@ private fun SelectedMarker(
         Column(
             modifier = Modifier
                 .padding(start = 8.dp)
-                .background(OrangeAccent, RoundedCornerShape(12.dp))
+                .background(AppColors.OrangeAccent, RoundedCornerShape(12.dp))
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -264,7 +267,7 @@ private fun SelectedMarker(
             ) {
                 Text(
                     text = "More details",
-                    color = OrangeAccent,
+                    color = AppColors.OrangeAccent,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp
                 )
@@ -278,7 +281,7 @@ private fun SelectedMarker(
                 .width(16.dp)
                 .height(10.dp)
                 .clip(TriangleShape)
-                .background(OrangeAccent)
+                .background(AppColors.OrangeAccent)
         )
     }
 }

@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.assgui.gourmandine.data.model.Restaurant
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 @Composable
 fun RestaurantCard(
@@ -50,7 +50,7 @@ fun RestaurantCard(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = if (isSelected) androidx.compose.foundation.BorderStroke(
-            2.dp, OrangeAccent
+            2.dp, AppColors.OrangeAccent
         ) else null
     ) {
         Column {
@@ -104,7 +104,7 @@ fun RestaurantCard(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color(0xFFE0E0E0)),
+                                .background(AppColors.MediumGray),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("No image", color = Color.Gray, fontSize = 10.sp)
@@ -134,7 +134,7 @@ fun RestaurantCard(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = null,
-                            tint = OrangeAccent,
+                            tint = AppColors.OrangeAccent,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
@@ -157,7 +157,7 @@ fun RestaurantCard(
                     ) {
                         val statusText = if (restaurant.isOpen) "Open" else "Closed"
                         val statusColor =
-                            if (restaurant.isOpen) Color(0xFF4CAF50) else Color(0xFFF44336)
+                            if (restaurant.isOpen) AppColors.Green else AppColors.Red
 
                         Box(
                             modifier = Modifier
@@ -181,7 +181,7 @@ fun RestaurantCard(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .clip(CircleShape)
-                                        .background(OrangeAccent)
+                                        .background(AppColors.OrangeAccent)
                                 )
                                 Text(
                                     text = restaurant.cuisineType,

@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthUiState
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthViewModel
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 enum class AuthScreen {
     LOGIN,
@@ -114,7 +114,7 @@ private fun ProfileContent(
                 .align(Alignment.TopStart)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFF0F0F0))
+                .background(AppColors.BackgroundGray)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -136,13 +136,13 @@ private fun ProfileContent(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(OrangeAccent.copy(alpha = 0.15f)),
+                .background(AppColors.OrangeAccent.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = null,
-                tint = OrangeAccent,
+                tint = AppColors.OrangeAccent,
                 modifier = Modifier.size(50.dp)
             )
         }
@@ -183,7 +183,7 @@ private fun ProfileContent(
                 .height(50.dp),
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = OrangeAccent
+                containerColor = AppColors.OrangeAccent
             )
         ) {
             Text(

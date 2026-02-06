@@ -24,8 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.assgui.gourmandine.ui.theme.AppColors
 
-private val OrangeAccent = Color(0xFFFF6B35)
 
 @Composable
 fun MapHeaderOverlay(
@@ -51,7 +51,7 @@ fun MapHeaderOverlay(
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Profil",
-                tint = OrangeAccent,
+                tint = AppColors.OrangeAccent,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -77,7 +77,7 @@ fun MapHeaderOverlay(
             Icon(
                 imageVector = Icons.Default.EventNote,
                 contentDescription = "Réservations",
-                tint = OrangeAccent,
+                tint = AppColors.OrangeAccent,
                 modifier = Modifier.size(24.dp)
             )
         }

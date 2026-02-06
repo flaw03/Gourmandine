@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.ui.components
 
 import androidx.compose.animation.core.Animatable
+import com.assgui.gourmandine.ui.theme.AppColors
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -105,7 +106,7 @@ fun SwipeableSheet(
                             .width(40.dp)
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(Color(0xFFD0D0D0))
+                            .background(AppColors.LightGray)
                     )
                 }
 
