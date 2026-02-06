@@ -217,23 +217,38 @@ private fun SelectedMarker(
             modifier = Modifier
                 .padding(start = 8.dp)
                 .background(AppColors.OrangeAccent, RoundedCornerShape(12.dp))
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(12.dp)
         ) {
-            // Line 1: Name (left) + star + rating (right)
+            Text(
+                text = restaurant.name,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                maxLines = 1
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = restaurant.name,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White, RoundedCornerShape(20.dp))
+                        .clickable { onMoreDetails() }
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "More details",
+                        color = AppColors.OrangeAccent,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -251,26 +266,6 @@ private fun SelectedMarker(
                         fontSize = 13.sp
                     )
                 }
-            }
-
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Line 3: "More details" — small centered pill
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White, RoundedCornerShape(20.dp))
-                    .clickable { onMoreDetails() }
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "More details",
-                    color = AppColors.OrangeAccent,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
-                )
             }
         }
 

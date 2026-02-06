@@ -12,9 +12,9 @@ import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -182,15 +182,20 @@ fun HomeScreen(
             isLocationButtonVisible = isLocationButtonVisible
         )
 
+        val visibleSheetHeightDp = with(density) {
+            val offset = try { sheetState.requireOffset() } catch (_: Exception) { fullHeightPx - middleHeightPx }
+            (fullHeightPx - offset).coerceAtLeast(0f).toDp()
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
+                .height(visibleSheetHeightDp)
                 .offset { IntOffset(0, sheetState.requireOffset().toInt()) }
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .background(Color.White)
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
