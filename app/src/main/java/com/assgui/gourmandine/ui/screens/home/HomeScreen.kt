@@ -11,15 +11,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -38,6 +43,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -82,7 +89,13 @@ fun HomeScreen(
     val isKeyboardOpen by remember { derivedStateOf { imeHeightPx > 0 } }
 
     LaunchedEffect(isKeyboardOpen) {
-        if (isKeyboardOpen) bottomSheetState.partialExpand()
+        if (isKeyboardOpen) bottomSheetState.expand()
+    }
+
+    LaunchedEffect(bottomSheetState.currentValue) {
+        if (bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
+            focusManager.clearFocus()
+        }
     }
 
     val sheetMaxHeightPx = with(density) { sheetMaxHeight.roundToPx() }
@@ -155,7 +168,9 @@ fun HomeScreen(
                 onMarkerDetailClick = viewModel::onMarkerDetailClick,
                 onClusterClick = viewModel::onClusterClick,
                 onProfileClick = onProfileClick,
-                onReservationClick = onReservationClick
+                onReservationClick = onReservationClick,
+                onMyLocationClick = viewModel::onMyLocationClick,
+                userLocation = uiState.userLocation
             )
         }
 
@@ -201,6 +216,7 @@ private fun SheetContent(
             .fillMaxWidth()
             .heightIn(max = sheetMaxHeight)
             .padding(horizontal = 16.dp)
+            .imePadding()
     ) {
         SearchBarRow(
             query = uiState.searchQuery,
@@ -218,6 +234,9 @@ private fun SheetContent(
                 ) {
                     CircularProgressIndicator(color = OrangeAccent)
                 }
+            }
+            uiState.isOffline && uiState.restaurants.isEmpty() -> {
+                NoConnectionMessage(modifier = Modifier.fillMaxWidth().weight(1f))
             }
             uiState.errorMessage != null -> {
                 Box(
@@ -252,5 +271,48 @@ private fun SheetContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NoConnectionMessage(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(OrangeAccent.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.WifiOff,
+                contentDescription = "Pas de connexion",
+                tint = OrangeAccent,
+                modifier = Modifier.size(36.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Oups, pas de connexion !",
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 18.sp,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Connectez-vous à internet pour\ndécouvrir les meilleurs restaurants",
+            fontSize = 14.sp,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp
+        )
     }
 }

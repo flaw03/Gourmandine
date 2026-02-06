@@ -68,6 +68,8 @@ fun RestaurantMapSection(
     onClusterClick: (LatLngBounds) -> Unit,
     onProfileClick: () -> Unit,
     onReservationClick: () -> Unit,
+    onMyLocationClick: () -> Unit = {},
+    userLocation: LatLng? = null,
     modifier: Modifier = Modifier
 ) {
     val selectedRestaurant = remember(restaurants, selectedRestaurantId) {
@@ -126,12 +128,30 @@ fun RestaurantMapSection(
                     )
                 }
             }
+
+            // User location marker (blue dot)
+            userLocation?.let { location ->
+                MarkerComposable(
+                    keys = arrayOf("user_location"),
+                    state = MarkerState(position = location),
+                    zIndex = 2f
+                ) {
+                    UserLocationMarker()
+                }
+            }
         }
 
         MapHeaderOverlay(
             onProfileClick = onProfileClick,
             onReservationClick = onReservationClick,
             modifier = Modifier.align(Alignment.TopStart)
+        )
+
+        MapLocationButton(
+            onLocationClick = onMyLocationClick,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = mapBottomPadding + 16.dp)
         )
     }
 }
@@ -143,6 +163,16 @@ private fun UnselectedMarker() {
             .size(20.dp)
             .background(OrangeAccent, CircleShape)
             .border(2.dp, Color.White, CircleShape)
+    )
+}
+
+@Composable
+private fun UserLocationMarker() {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .background(Color(0xFF4285F4), CircleShape)
+            .border(3.dp, Color.White, CircleShape)
     )
 }
 

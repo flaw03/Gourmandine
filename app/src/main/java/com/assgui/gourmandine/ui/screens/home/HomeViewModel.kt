@@ -1,6 +1,15 @@
 package com.assgui.gourmandine.ui.screens.home
 
+import android.Manifest
 import android.app.Application
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.assgui.gourmandine.data.model.Restaurant
@@ -22,23 +31,59 @@ data class HomeUiState(
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val isOffline: Boolean = false,
     val cameraPosition: LatLng = LatLng(48.8566, 2.3522),
     val cameraZoom: Float = 14f,
     val detailRestaurant: Restaurant? = null,
     val clusterBounds: LatLngBounds? = null,
-    val detailReviews: List<Review> = emptyList()
+    val detailReviews: List<Review> = emptyList(),
+    val userLocation: LatLng? = null
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val placesRepository = PlacesRepository.create(application)
     private val reviewRepository = ReviewRepository()
+    private val connectivityManager = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            _uiState.update { it.copy(isOffline = false) }
+            if (_uiState.value.restaurants.isEmpty()) {
+                loadNearbyRestaurants(48.8566, 2.3522)
+            }
+        }
+
+        override fun onLost(network: Network) {
+            _uiState.update { it.copy(isOffline = true) }
+        }
+    }
+
     init {
+        observeNetworkConnectivity()
         loadNearbyRestaurants(48.8566, 2.3522)
+    }
+
+    private fun observeNetworkConnectivity() {
+        val networkRequest = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
+
+        // Check initial connectivity state
+        val isConnected = connectivityManager.activeNetwork?.let { network ->
+            connectivityManager.getNetworkCapabilities(network)
+                ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } ?: false
+        _uiState.update { it.copy(isOffline = !isConnected) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
     fun loadNearbyRestaurants(lat: Double, lng: Double) {
@@ -130,6 +175,40 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onDismissDetail() {
         _uiState.update { it.copy(detailRestaurant = null, detailReviews = emptyList()) }
+    }
+
+    fun onMyLocationClick() {
+        val context = getApplication<Application>()
+
+        // Check permission
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        try {
+            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+
+            location?.let {
+                val userPosition = LatLng(it.latitude, it.longitude)
+                _uiState.update { state ->
+                    state.copy(
+                        cameraPosition = userPosition,
+                        cameraZoom = 15f,
+                        userLocation = userPosition
+                    )
+                }
+                loadNearbyRestaurants(it.latitude, it.longitude)
+            }
+        } catch (e: SecurityException) {
+            // Permission was revoked
+        }
     }
 
     private fun loadReviews(restaurantId: String) {
