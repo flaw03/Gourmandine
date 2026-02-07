@@ -10,5 +10,10 @@ data class Review(
     val imageUrls: List<String> = emptyList(),
     val text: String = "",
     val rating: Double = 0.0,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val visitDate: Long = 0L,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val isGoogleReview: Boolean = false,
+    val userPhotoUrl: String = ""
 )

@@ -3,10 +3,15 @@ package com.assgui.gourmandine.data.repository
 import android.content.Context
 
 import com.assgui.gourmandine.data.model.Restaurant
+import com.assgui.gourmandine.data.model.Review
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.CircularBounds
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FetchResolvedPhotoUriRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.api.net.SearchByTextRequest
@@ -40,8 +45,42 @@ class PlacesRepository(private val placesClient: PlacesClient) {
         Place.Field.FORMATTED_ADDRESS,
         Place.Field.PHOTO_METADATAS,
         Place.Field.EDITORIAL_SUMMARY,
-        Place.Field.NATIONAL_PHONE_NUMBER
+        Place.Field.NATIONAL_PHONE_NUMBER,
+        Place.Field.REVIEWS
     )
+
+    suspend fun fetchGoogleReviews(placeId: String): List<Review> {
+        return try {
+            val request = FetchPlaceRequest.builder(placeId, listOf(Place.Field.REVIEWS)).build()
+            val response = placesClient.fetchPlace(request).await()
+            val place = response.place
+            place.reviews?.map { review ->
+                Review(
+                    id = "google_${placeId}_${parsePublishTime(review.publishTime)}",
+                    restaurantId = placeId,
+                    userName = review.authorAttribution?.name ?: "Utilisateur Google",
+                    userPhotoUrl = review.authorAttribution?.photoUri?.toString() ?: "",
+                    text = review.text ?: "",
+                    rating = review.rating,
+                    createdAt = parsePublishTime(review.publishTime),
+                    isGoogleReview = true
+                )
+            } ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun parsePublishTime(publishTime: String?): Long {
+        if (publishTime.isNullOrBlank()) return 0L
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+            sdf.timeZone = TimeZone.getTimeZone("UTC")
+            sdf.parse(publishTime)?.time ?: 0L
+        } catch (e: Exception) {
+            0L
+        }
+    }
 
     suspend fun searchNearby(lat: Double, lng: Double, radiusMeters: Double = 1500.0): PlacesResult {
         return try {

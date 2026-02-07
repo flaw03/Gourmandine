@@ -22,4 +22,15 @@ class ReviewRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun addReview(review: Review): Result<String> {
+        return try {
+            val docRef = reviewsCollection.document()
+            val reviewWithId = review.copy(id = docRef.id)
+            docRef.set(reviewWithId).await()
+            Result.success(docRef.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

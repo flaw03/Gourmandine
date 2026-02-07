@@ -21,9 +21,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,32 +47,83 @@ import com.assgui.gourmandine.ui.theme.AppColors
 @Composable
 fun ReviewsSection(
     reviews: List<Review>,
+    googleReviews: List<Review> = emptyList(),
     modifier: Modifier = Modifier
 ) {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var selectedReview by remember { mutableStateOf<Review?>(null) }
 
+    // Auto-select Google tab if no community reviews
+    LaunchedEffect(reviews.size, googleReviews.size) {
+        if (reviews.isEmpty() && googleReviews.isNotEmpty()) {
+            selectedTabIndex = 1
+        }
+    }
+
+    val currentReviews = if (selectedTabIndex == 0) reviews else googleReviews
+
     Column(modifier = modifier) {
-        // Title
-        Text(
-            text = "Avis (${reviews.size})",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = Color.Black,
+        // Tabs
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = Color.Transparent,
+            contentColor = AppColors.OrangeAccent,
+            indicator = { tabPositions ->
+                TabRowDefaults.SecondaryIndicator(
+                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    color = AppColors.OrangeAccent
+                )
+            },
             modifier = Modifier.padding(horizontal = 20.dp)
-        )
+        ) {
+            Tab(
+                selected = selectedTabIndex == 0,
+                onClick = { selectedTabIndex = 0 },
+                text = {
+                    Text(
+                        text = "Communauté (${reviews.size})",
+                        fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selectedTabIndex == 0) AppColors.OrangeAccent else Color.Gray
+                    )
+                }
+            )
+            Tab(
+                selected = selectedTabIndex == 1,
+                onClick = { selectedTabIndex = 1 },
+                text = {
+                    Text(
+                        text = "Google (${googleReviews.size})",
+                        fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selectedTabIndex == 1) AppColors.OrangeAccent else Color.Gray
+                    )
+                }
+            )
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Carousel
-        ReviewsCarousel(
-            reviews = reviews,
-            onReviewClick = { selectedReview = it }
-        )
+        // Carousel for the selected tab
+        if (currentReviews.isNotEmpty()) {
+            ReviewsCarousel(
+                reviews = currentReviews,
+                onReviewClick = { selectedReview = it }
+            )
+        } else {
+            Text(
+                text = if (selectedTabIndex == 0) "Aucun avis de la communauté" else "Aucun avis Google",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            )
+        }
     }
 
     // Full sheet
     ReviewsFullSheet(
         visible = selectedReview != null,
-        reviews = reviews,
+        communityReviews = reviews,
+        googleReviews = googleReviews,
+        initialTabIndex = selectedTabIndex,
         onDismiss = { selectedReview = null }
     )
 }
@@ -120,21 +177,55 @@ private fun ReviewsCarousel(
 @Composable
 fun ReviewsFullSheet(
     visible: Boolean,
-    reviews: List<Review>,
+    communityReviews: List<Review>,
+    googleReviews: List<Review>,
+    initialTabIndex: Int = 0,
     onDismiss: () -> Unit
 ) {
     SwipeableSheet(
         visible = visible,
         onDismiss = onDismiss
     ) {
+        var selectedTabIndex by remember { mutableIntStateOf(initialTabIndex) }
+        val currentReviews = if (selectedTabIndex == 0) communityReviews else googleReviews
+
         Column(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = "Avis (${reviews.size})",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color.Black,
+            // Tabs
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color.Transparent,
+                contentColor = AppColors.OrangeAccent,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        color = AppColors.OrangeAccent
+                    )
+                },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-            )
+            ) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = {
+                        Text(
+                            text = "Communauté (${communityReviews.size})",
+                            fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selectedTabIndex == 0) AppColors.OrangeAccent else Color.Gray
+                        )
+                    }
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = {
+                        Text(
+                            text = "Google (${googleReviews.size})",
+                            fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal,
+                            color = if (selectedTabIndex == 1) AppColors.OrangeAccent else Color.Gray
+                        )
+                    }
+                )
+            }
 
             val scrollState = rememberScrollState()
             val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
@@ -148,8 +239,17 @@ fun ReviewsFullSheet(
                     .padding(bottom = navigationBarPadding.calculateBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                reviews.forEach { review ->
-                    ReviewCard(review = review)
+                if (currentReviews.isNotEmpty()) {
+                    currentReviews.forEach { review ->
+                        ReviewCard(review = review)
+                    }
+                } else {
+                    Text(
+                        text = if (selectedTabIndex == 0) "Aucun avis de la communauté" else "Aucun avis Google",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }

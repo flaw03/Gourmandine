@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.ui.components.RestaurantDetailSheet
 import com.assgui.gourmandine.ui.screens.home.components.RestaurantMapSection
 import com.assgui.gourmandine.ui.screens.home.components.SearchBarRow
@@ -57,10 +58,22 @@ enum class SheetPosition { Down, Middle, Up }
 fun HomeScreen(
     onProfileClick: () -> Unit = {},
     onReservationClick: () -> Unit = {},
+    onAddReview: (Restaurant) -> Unit = {},
+    reviewSubmittedForRestaurantId: String? = null,
+    onReviewSubmittedConsumed: () -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+
+    // After a review is submitted, reopen the restaurant detail and reload reviews
+    LaunchedEffect(reviewSubmittedForRestaurantId) {
+        reviewSubmittedForRestaurantId?.let { restaurantId ->
+            viewModel.onMarkerDetailClick(restaurantId)
+            onReviewSubmittedConsumed()
+        }
+    }
+
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
@@ -179,7 +192,8 @@ fun HomeScreen(
             onReservationClick = onReservationClick,
             onMyLocationClick = viewModel::onMyLocationClick,
             userLocation = uiState.userLocation,
-            isLocationButtonVisible = isLocationButtonVisible
+            isLocationButtonVisible = isLocationButtonVisible,
+            reviewImages = uiState.restaurantReviewImages
         )
 
         val visibleSheetHeightDp = with(density) {
@@ -241,7 +255,9 @@ fun HomeScreen(
             restaurant = uiState.detailRestaurant,
             visible = uiState.detailRestaurant != null,
             reviews = uiState.detailReviews,
+            googleReviews = uiState.detailGoogleReviews,
             onDismiss = viewModel::onDismissDetail,
+            onAddReview = onAddReview,
             modifier = Modifier.fillMaxSize()
         )
     }

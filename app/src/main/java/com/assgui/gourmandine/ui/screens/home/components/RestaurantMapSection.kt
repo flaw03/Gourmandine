@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -34,6 +33,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.assgui.gourmandine.data.model.Restaurant
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
@@ -71,6 +72,7 @@ fun RestaurantMapSection(
     onMyLocationClick: () -> Unit = {},
     userLocation: LatLng? = null,
     isLocationButtonVisible: Boolean = true,
+    reviewImages: Map<String, String> = emptyMap(),
     modifier: Modifier = Modifier
 ) {
     val selectedRestaurant = remember(restaurants, selectedRestaurantId) {
@@ -125,6 +127,7 @@ fun RestaurantMapSection(
                 ) {
                     SelectedMarker(
                         restaurant = restaurant,
+                        reviewImageUrl = reviewImages[restaurant.id],
                         onMoreDetails = { onMarkerDetailClick(restaurant.id) }
                     )
                 }
@@ -207,6 +210,7 @@ private val TriangleShape = GenericShape { size, _ ->
 @Composable
 private fun SelectedMarker(
     restaurant: Restaurant,
+    reviewImageUrl: String? = null,
     onMoreDetails: () -> Unit
 ) {
     Column(
@@ -219,13 +223,28 @@ private fun SelectedMarker(
                 .background(AppColors.OrangeAccent, RoundedCornerShape(12.dp))
                 .padding(12.dp)
         ) {
-            Text(
-                text = restaurant.name,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                maxLines = 1
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (reviewImageUrl != null) {
+                    AsyncImage(
+                        model = reviewImageUrl,
+                        contentDescription = "Photo review",
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Text(
+                    text = restaurant.name,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 1
+                )
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 

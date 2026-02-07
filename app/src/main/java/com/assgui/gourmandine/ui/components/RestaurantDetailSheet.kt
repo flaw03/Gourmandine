@@ -29,8 +29,9 @@ fun RestaurantDetailSheet(
     restaurant: Restaurant?,
     visible: Boolean,
     reviews: List<Review> = emptyList(),
+    googleReviews: List<Review> = emptyList(),
     onDismiss: () -> Unit,
-    onAddReview: (String) -> Unit = {},
+    onAddReview: (Restaurant) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     SwipeableSheet(
@@ -42,7 +43,8 @@ fun RestaurantDetailSheet(
             RestaurantDetailContent(
                 restaurant = resto,
                 reviews = reviews,
-                onAddReview = { onAddReview(resto.id) }
+                googleReviews = googleReviews,
+                onAddReview = { onAddReview(resto) }
             )
         }
     }
@@ -52,29 +54,10 @@ fun RestaurantDetailSheet(
 private fun RestaurantDetailContent(
     restaurant: Restaurant,
     reviews: List<Review>,
+    googleReviews: List<Review>,
     onAddReview: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-
-    val displayReviews = reviews.ifEmpty {
-        listOf(
-            Review(
-                id = "1",
-                restaurantId = "rest_123",
-                userId = "user_42",
-                userName = "Ahmed Benali",
-                userReviewCount = 27,
-                userCreatedAt = 1625140800000,
-                imageUrls = listOf(
-                    "https://picsum.photos/200",
-                    "https://picsum.photos/201"
-                ),
-                text = "Très bon restaurant, service rapide et plats délicieux. Je recommande!",
-                rating = 4.5,
-                createdAt = System.currentTimeMillis()
-            )
-        )
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -130,7 +113,7 @@ private fun RestaurantDetailContent(
             }
 
             // Reviews section
-            ReviewsSection(reviews = displayReviews)
+            ReviewsSection(reviews = reviews, googleReviews = googleReviews)
 
             // Action buttons
             RestaurantActionButtons(

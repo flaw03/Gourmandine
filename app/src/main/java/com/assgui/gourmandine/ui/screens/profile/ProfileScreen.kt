@@ -21,8 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +49,18 @@ enum class AuthScreen {
 @Composable
 fun ProfileScreen(
     onBack: () -> Unit = {},
+    onLoginSuccess: (() -> Unit)? = null,
     viewModel: AuthViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var currentScreen by remember { mutableStateOf(AuthScreen.LOGIN) }
     val context = LocalContext.current
+
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn && onLoginSuccess != null) {
+            onLoginSuccess()
+        }
+    }
 
     if (uiState.isLoggedIn) {
         ProfileContent(

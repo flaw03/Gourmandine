@@ -37,7 +37,9 @@ data class HomeUiState(
     val detailRestaurant: Restaurant? = null,
     val clusterBounds: LatLngBounds? = null,
     val detailReviews: List<Review> = emptyList(),
-    val userLocation: LatLng? = null
+    val detailGoogleReviews: List<Review> = emptyList(),
+    val userLocation: LatLng? = null,
+    val restaurantReviewImages: Map<String, String> = emptyMap()
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -98,6 +100,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             cameraPosition = LatLng(lat, lng)
                         )
                     }
+                    loadReviewImagesForRestaurants(result.restaurants)
                 }
                 is PlacesResult.Error -> {
                     _uiState.update {
@@ -149,7 +152,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val alreadySelected = _uiState.value.selectedRestaurantId == id
         if (alreadySelected) {
             // Already selected → open detail
-            _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList()) }
+            _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList(), detailGoogleReviews = emptyList()) }
             loadReviews(id)
         } else {
             // Not selected → select + move camera
@@ -165,7 +168,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onMarkerDetailClick(id: String) {
         val restaurant = _uiState.value.restaurants.find { it.id == id } ?: return
-        _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList()) }
+        _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList(), detailGoogleReviews = emptyList()) }
         loadReviews(id)
     }
 
@@ -174,7 +177,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onDismissDetail() {
-        _uiState.update { it.copy(detailRestaurant = null, detailReviews = emptyList()) }
+        _uiState.update { it.copy(detailRestaurant = null, detailReviews = emptyList(), detailGoogleReviews = emptyList()) }
+    }
+
+    fun refreshDetailReviews() {
+        val restaurant = _uiState.value.detailRestaurant ?: return
+        loadReviews(restaurant.id)
     }
 
     fun onMyLocationClick() {
@@ -213,10 +221,37 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadReviews(restaurantId: String) {
         viewModelScope.launch {
-            reviewRepository.getReviewsForRestaurant(restaurantId)
-                .onSuccess { reviews ->
-                    _uiState.update { it.copy(detailReviews = reviews) }
-                }
+            // Load Firebase and Google reviews in parallel
+            val firebaseJob = launch {
+                reviewRepository.getReviewsForRestaurant(restaurantId)
+                    .onSuccess { reviews ->
+                        _uiState.update { it.copy(detailReviews = reviews) }
+                    }
+            }
+            val googleJob = launch {
+                val googleReviews = placesRepository.fetchGoogleReviews(restaurantId)
+                _uiState.update { it.copy(detailGoogleReviews = googleReviews) }
+            }
+            firebaseJob.join()
+            googleJob.join()
+        }
+    }
+
+    private fun loadReviewImagesForRestaurants(restaurants: List<Restaurant>) {
+        viewModelScope.launch {
+            val imageMap = mutableMapOf<String, String>()
+            for (restaurant in restaurants) {
+                reviewRepository.getReviewsForRestaurant(restaurant.id)
+                    .onSuccess { reviews ->
+                        val firstImage = reviews
+                            .flatMap { it.imageUrls }
+                            .firstOrNull()
+                        if (firstImage != null) {
+                            imageMap[restaurant.id] = firstImage
+                        }
+                    }
+            }
+            _uiState.update { it.copy(restaurantReviewImages = imageMap) }
         }
     }
 
