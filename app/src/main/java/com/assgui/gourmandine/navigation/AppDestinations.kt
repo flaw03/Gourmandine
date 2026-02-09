@@ -1,19 +1,14 @@
 package com.assgui.gourmandine.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.RateReview
-import androidx.compose.ui.graphics.vector.ImageVector
+object AppRoutes {
+    const val HOME = "home"
+    const val RESERVATION = "reservation"
+    const val PROFILE = "profile"
+    const val RESTAURANT_DETAIL = "restaurant/{restaurantId}"
+    const val ADD_REVIEW = "restaurant/{restaurantId}/addReview"
+    const val LOGIN_FOR_REVIEW = "restaurant/{restaurantId}/loginForReview"
 
-enum class AppDestinations(
-    val label: String,
-    val icon: ImageVector,
-) {
-    HOME("Accueil", Icons.Default.Home),
-    RESERVATION("Réservations", Icons.Default.DateRange),
-    PROFILE("Profil", Icons.Default.AccountBox),
-    ADD_REVIEW("Ajouter un avis", Icons.Default.RateReview),
-    LOGIN_FOR_REVIEW("Connexion", Icons.Default.AccountBox),
+    fun restaurantDetail(restaurantId: String) = "restaurant/$restaurantId"
+    fun addReview(restaurantId: String) = "restaurant/$restaurantId/addReview"
+    fun loginForReview(restaurantId: String) = "restaurant/$restaurantId/loginForReview"
 }

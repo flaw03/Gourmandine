@@ -30,6 +30,8 @@ class AccelerometerSensor(context: Context) : SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+
     override fun onSensorChanged(event: SensorEvent?) {
         event ?: return
         // x: -10..10 (tilt left/right), y: -10..10 (tilt forward/back)

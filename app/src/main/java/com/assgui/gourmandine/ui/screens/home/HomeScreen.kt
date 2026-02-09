@@ -40,8 +40,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.assgui.gourmandine.data.model.Restaurant
+import com.assgui.gourmandine.navigation.AppRoutes
 import com.assgui.gourmandine.ui.components.RestaurantDetailSheet
+import com.google.firebase.auth.FirebaseAuth
 import com.assgui.gourmandine.ui.screens.home.components.RestaurantMapSection
 import com.assgui.gourmandine.ui.screens.home.components.SearchBarRow
 import com.assgui.gourmandine.ui.screens.home.components.SheetDragHandle
@@ -56,23 +59,11 @@ enum class SheetPosition { Down, Middle, Up }
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
-    onProfileClick: () -> Unit = {},
-    onReservationClick: () -> Unit = {},
-    onAddReview: (Restaurant) -> Unit = {},
-    reviewSubmittedForRestaurantId: String? = null,
-    onReviewSubmittedConsumed: () -> Unit = {},
+    navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
-
-    // After a review is submitted, reopen the restaurant detail and reload reviews
-    LaunchedEffect(reviewSubmittedForRestaurantId) {
-        reviewSubmittedForRestaurantId?.let { restaurantId ->
-            viewModel.onMarkerDetailClick(restaurantId)
-            onReviewSubmittedConsumed()
-        }
-    }
 
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
@@ -108,7 +99,7 @@ fun HomeScreen(
 
         val sheetState = remember {
             AnchoredDraggableState(
-                initialValue = SheetPosition.Middle,
+                initialValue = SheetPosition.Down,
                 anchors = anchors,
                 positionalThreshold = { distance: Float -> distance * 0.5f },
                 velocityThreshold = { with(density) { 125.dp.toPx() } },
@@ -118,7 +109,7 @@ fun HomeScreen(
         }
 
         LaunchedEffect(anchors) {
-            sheetState.updateAnchors(anchors)
+            sheetState.updateAnchors(anchors, sheetState.currentValue)
         }
 
         val currentPosition by remember {
@@ -175,7 +166,11 @@ fun HomeScreen(
         }
 
         LaunchedEffect(uiState.restaurants.isEmpty()) {
-            if (uiState.restaurants.isEmpty()) sheetState.animateTo(SheetPosition.Down)
+            if (uiState.restaurants.isEmpty()) {
+                sheetState.animateTo(SheetPosition.Down)
+            } else {
+                sheetState.animateTo(SheetPosition.Middle)
+            }
         }
 
         // --- Layout ---
@@ -188,8 +183,8 @@ fun HomeScreen(
             onMarkerClick = viewModel::onMarkerClick,
             onMarkerDetailClick = viewModel::onMarkerDetailClick,
             onClusterClick = viewModel::onClusterClick,
-            onProfileClick = onProfileClick,
-            onReservationClick = onReservationClick,
+            onProfileClick = { navController.navigate(AppRoutes.PROFILE) },
+            onReservationClick = { navController.navigate(AppRoutes.RESERVATION) },
             onMyLocationClick = viewModel::onMyLocationClick,
             userLocation = uiState.userLocation,
             isLocationButtonVisible = isLocationButtonVisible,
@@ -257,7 +252,14 @@ fun HomeScreen(
             reviews = uiState.detailReviews,
             googleReviews = uiState.detailGoogleReviews,
             onDismiss = viewModel::onDismissDetail,
-            onAddReview = onAddReview,
+            onAddReview = { restaurant ->
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user != null) {
+                    navController.navigate(AppRoutes.addReview(restaurant.id))
+                } else {
+                    navController.navigate(AppRoutes.loginForReview(restaurant.id))
+                }
+            },
             modifier = Modifier.fillMaxSize()
         )
     }

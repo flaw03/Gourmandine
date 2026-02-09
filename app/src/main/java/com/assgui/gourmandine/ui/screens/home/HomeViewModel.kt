@@ -51,11 +51,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var initialLoadDone = false
+
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             _uiState.update { it.copy(isOffline = false) }
-            if (_uiState.value.restaurants.isEmpty()) {
-                loadNearbyRestaurants(48.8566, 2.3522)
+            if (_uiState.value.restaurants.isEmpty() && initialLoadDone) {
+                val pos = _uiState.value.cameraPosition
+                loadNearbyRestaurants(pos.latitude, pos.longitude)
             }
         }
 
@@ -66,7 +69,39 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         observeNetworkConnectivity()
-        loadNearbyRestaurants(48.8566, 2.3522)
+        val initialLocation = getLastKnownLocationIfPermitted()
+        if (initialLocation != null) {
+            _uiState.update {
+                it.copy(
+                    userLocation = initialLocation,
+                    cameraPosition = initialLocation,
+                    cameraZoom = 15f
+                )
+            }
+            loadNearbyRestaurants(initialLocation.latitude, initialLocation.longitude)
+        } else {
+            loadNearbyRestaurants(48.8566, 2.3522)
+        }
+        initialLoadDone = true
+    }
+
+    private fun getLastKnownLocationIfPermitted(): LatLng? {
+        val context = getApplication<Application>()
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return null
+        }
+        return try {
+            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            location?.let { LatLng(it.latitude, it.longitude) }
+        } catch (e: SecurityException) {
+            null
+        }
     }
 
     private fun observeNetworkConnectivity() {
