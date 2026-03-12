@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -38,7 +37,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.assgui.gourmandine.R
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthUiState
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 
 
 private val fieldColors
@@ -72,26 +71,35 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onBack: () -> Unit = {}
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(AppColors.SurfaceWarm)
     ) {
-        // Back button
-        IconButton(
-            onClick = onBack,
+        // Header
+        Box(
             modifier = Modifier
+                .fillMaxWidth()
+                .background(AppColors.SurfaceWarm)
                 .statusBarsPadding()
-                .padding(start = 8.dp, top = 4.dp)
-                .align(Alignment.TopStart)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(AppColors.BackgroundGray)
+                .padding(horizontal = 8.dp, vertical = 8.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Retour",
-                tint = Color.Black
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Retour",
+                    tint = Color.Black
+                )
+            }
+            Text(
+                text = "Créer un compte",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
 
@@ -103,7 +111,7 @@ fun RegisterScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Logo / icon
         Box(
@@ -120,14 +128,7 @@ fun RegisterScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Créer un compte",
-            fontWeight = FontWeight.Bold,
-            fontSize = 26.sp,
-            color = Color.Black
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Inscrivez-vous pour commencer",
@@ -148,7 +149,7 @@ fun RegisterScreen(
                 },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = AppShapes.Large,
                 colors = fieldColors,
                 isError = uiState.prenomError != null,
                 supportingText = uiState.prenomError?.let { { Text(it, color = AppColors.Red) } }
@@ -162,7 +163,7 @@ fun RegisterScreen(
                 label = { Text("Nom") },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = AppShapes.Large,
                 colors = fieldColors,
                 isError = uiState.nomError != null,
                 supportingText = uiState.nomError?.let { { Text(it, color = AppColors.Red) } }

@@ -48,9 +48,84 @@ class AuthViewModel(
                             state.copy(
                                 userNom = it.nom,
                                 userPrenom = it.prenom,
-                                userEmail = it.email
+                                userEmail = it.email,
+                                userPhone = it.phone.ifBlank { null }
                             )
                         }
+                    }
+                }
+        }
+    }
+
+    fun openEditProfile() {
+        val state = _uiState.value
+        _uiState.update {
+            it.copy(
+                isEditingProfile = true,
+                editNom = state.userNom ?: "",
+                editPrenom = state.userPrenom ?: "",
+                editPhone = state.userPhone ?: "",
+                editNomError = null,
+                editPrenomError = null,
+                updateSuccess = false,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun closeEditProfile() {
+        _uiState.update { it.copy(isEditingProfile = false, updateSuccess = false) }
+    }
+
+    fun onEditNomChange(nom: String) {
+        _uiState.update { it.copy(editNom = nom, editNomError = null) }
+    }
+
+    fun onEditPrenomChange(prenom: String) {
+        _uiState.update { it.copy(editPrenom = prenom, editPrenomError = null) }
+    }
+
+    fun onEditPhoneChange(phone: String) {
+        _uiState.update { it.copy(editPhone = phone) }
+    }
+
+    fun saveProfile() {
+        val state = _uiState.value
+        val nomError = if (state.editNom.isBlank()) "Le nom est requis" else null
+        val prenomError = if (state.editPrenom.isBlank()) "Le prénom est requis" else null
+
+        if (nomError != null || prenomError != null) {
+            _uiState.update { it.copy(editNomError = nomError, editPrenomError = prenomError) }
+            return
+        }
+
+        val uid = authRepository.currentUser?.uid ?: return
+        _uiState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            val user = User(
+                uid = uid,
+                nom = state.editNom.trim(),
+                prenom = state.editPrenom.trim(),
+                email = state.userEmail ?: "",
+                phone = state.editPhone.trim()
+            )
+            userRepository.updateUser(user)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isEditingProfile = false,
+                            updateSuccess = true,
+                            userNom = user.nom,
+                            userPrenom = user.prenom,
+                            userPhone = user.phone.ifBlank { null }
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = "Erreur : ${e.message}")
                     }
                 }
         }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -34,7 +33,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.assgui.gourmandine.R
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthUiState
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 
 
 @Composable
@@ -57,27 +56,35 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onBack: () -> Unit = {}
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 8.dp, top = 4.dp)
-            .background(Color.White)
+            .background(AppColors.SurfaceWarm)
     ) {
-        // Back button
-        IconButton(
-            onClick = onBack,
+        // Header
+        Box(
             modifier = Modifier
+                .fillMaxWidth()
+                .background(AppColors.SurfaceWarm)
                 .statusBarsPadding()
-                .padding(start = 8.dp, top = 4.dp)
-                .align(Alignment.TopStart)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(AppColors.BackgroundGray)
+                .padding(horizontal = 8.dp, vertical = 8.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Retour",
-                tint = Color.Black
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Retour",
+                    tint = Color.Black
+                )
+            }
+            Text(
+                text = "Connexion",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Black,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
 
@@ -103,14 +110,7 @@ fun LoginScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Connexion",
-            fontWeight = FontWeight.Bold,
-            fontSize = 26.sp,
-            color = Color.Black
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Connectez-vous pour continuer",
@@ -129,7 +129,7 @@ fun LoginScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = AppShapes.Large,
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = AppColors.MediumGray,
                 focusedBorderColor = AppColors.OrangeAccent,
@@ -151,7 +151,7 @@ fun LoginScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = AppShapes.Large,
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = AppColors.MediumGray,
                 focusedBorderColor = AppColors.OrangeAccent,
