@@ -194,23 +194,18 @@ fun AddReviewScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
         ) {
-            // Top bar
-            Row(
+            // Header
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .background(Color.White)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(AppColors.BackgroundGray)
+                    modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -218,16 +213,21 @@ fun AddReviewScreen(
                         tint = Color.Black
                     )
                 }
+                Text(
+                    text = "Ajouter un avis",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.Black,
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
 
-            // Title
-            Text(
-                text = "Ajouter un avis",
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = Color.Black
-            )
-
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+            ) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Restaurant recap
@@ -381,6 +381,7 @@ fun AddReviewScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 

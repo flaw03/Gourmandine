@@ -23,6 +23,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.SentimentVerySatisfied
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -80,8 +88,17 @@ fun PhotoEditorScreen(
     // Update filters from sensor
     canvasView.setFilterIntensity(sepia = tiltX, brightness = tiltY)
 
-    val emojiOptions = remember {
-        listOf("⭐", "❤️", "🔥", "👍", "😍", "🍽️", "👨‍🍳", "🎉")
+    data class StickerOption(val icon: ImageVector, val emoji: String)
+    val stickerOptions = remember {
+        listOf(
+            StickerOption(Icons.Default.Star,                   "⭐"),
+            StickerOption(Icons.Default.Favorite,               "❤️"),
+            StickerOption(Icons.Default.LocalFireDepartment,    "🔥"),
+            StickerOption(Icons.Default.ThumbUp,                "👍"),
+            StickerOption(Icons.Default.SentimentVerySatisfied, "😍"),
+            StickerOption(Icons.Default.Restaurant,             "🍽️"),
+            StickerOption(Icons.Default.Celebration,            "🎉")
+        )
     }
 
     Column(
@@ -184,19 +201,21 @@ fun PhotoEditorScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
-            items(emojiOptions) { emoji ->
+            items(stickerOptions) { sticker ->
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.White.copy(alpha = 0.15f))
                         .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                        .clickable { canvasView.addEmoji(emoji) },
+                        .clickable { canvasView.addEmoji(sticker.emoji) },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = emoji,
-                        fontSize = 28.sp
+                    Icon(
+                        imageVector = sticker.icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
