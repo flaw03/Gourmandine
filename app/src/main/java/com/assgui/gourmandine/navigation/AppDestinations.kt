@@ -3,6 +3,7 @@ package com.assgui.gourmandine.navigation
 object AppRoutes {
     const val HOME = "home"
     const val RESERVATION = "reservation"
+    const val FAVORITES = "favorites"
     const val PROFILE = "profile"
     const val RESTAURANT_DETAIL = "restaurant/{restaurantId}"
     const val ADD_REVIEW = "restaurant/{restaurantId}/addReview"
