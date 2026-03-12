@@ -22,21 +22,29 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.assgui.gourmandine.navigation.AppRoutes
-import com.assgui.gourmandine.ui.screens.addreview.AddReviewScreen
+import com.assgui.gourmandine.ui.screens.favorites.FavoritesScreen
 import com.assgui.gourmandine.ui.screens.home.HomeScreen
 import com.assgui.gourmandine.ui.screens.home.HomeViewModel
 import com.assgui.gourmandine.ui.screens.profile.ProfileScreen
 import com.assgui.gourmandine.ui.screens.reservation.ReservationScreen
 import com.assgui.gourmandine.ui.theme.GourmandineTheme
+import android.widget.Toast
 import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
-        println(FirebaseAuth.getInstance())
+
+        // Vérification connexion Firebase au démarrage
+        FirebaseFirestore.getInstance()
+            .collection("_ping").limit(1).get()
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "❌ Firebase non connecté : ${e.message}", Toast.LENGTH_LONG).show()
+            }
 
         if (!Places.isInitialized()) {
             Places.initializeWithNewPlacesApiEnabled(applicationContext, BuildConfig.MAPS_API_KEY)
@@ -65,19 +73,7 @@ fun GourmandineApp() {
             navController = navController,
             startDestination = AppRoutes.HOME
         ) {
-            composable(AppRoutes.HOME) { backStackEntry ->
-                // Listen for reviewSubmitted result from AddReviewScreen
-                val reviewSubmittedId = backStackEntry.savedStateHandle
-                    .getStateFlow<String?>("reviewSubmitted", null)
-                    .collectAsState().value
-
-                LaunchedEffect(reviewSubmittedId) {
-                    reviewSubmittedId?.let { restaurantId ->
-                        homeViewModel.onMarkerDetailClick(restaurantId)
-                        backStackEntry.savedStateHandle.remove<String>("reviewSubmitted")
-                    }
-                }
-
+            composable(AppRoutes.HOME) {
                 HomeScreen(
                     navController = navController,
                     viewModel = homeViewModel
@@ -86,13 +82,26 @@ fun GourmandineApp() {
 
             composable(AppRoutes.RESERVATION) {
                 ReservationScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    navController = navController
+                )
+            }
+
+            composable(AppRoutes.FAVORITES) {
+                FavoritesScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToHome = { navController.popBackStack(AppRoutes.HOME, false) },
+                    onNavigateToProfile = { navController.navigate(AppRoutes.PROFILE) },
+                    onNavigateToReservations = { navController.navigate(AppRoutes.RESERVATION) }
                 )
             }
 
             composable(AppRoutes.PROFILE) {
                 ProfileScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onNavigateToHome = { navController.popBackStack(AppRoutes.HOME, false) },
+                    onNavigateToReservations = { navController.navigate(AppRoutes.RESERVATION) },
+                    onNavigateToFavorites = { navController.navigate(AppRoutes.FAVORITES) }
                 )
             }
 
@@ -113,43 +122,6 @@ fun GourmandineApp() {
                 )
             }
 
-            composable(
-                route = AppRoutes.ADD_REVIEW,
-                arguments = listOf(navArgument("restaurantId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val restaurantId = backStackEntry.arguments?.getString("restaurantId") ?: return@composable
-                val uiState by homeViewModel.uiState.collectAsState()
-                val restaurant = uiState.restaurants.find { it.id == restaurantId }
-
-                restaurant?.let {
-                    AddReviewScreen(
-                        restaurant = it,
-                        onDismiss = { navController.popBackStack() },
-                        onReviewSubmitted = {
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.set("reviewSubmitted", restaurantId)
-                            navController.popBackStack()
-                        }
-                    )
-                }
-            }
-
-            composable(
-                route = AppRoutes.LOGIN_FOR_REVIEW,
-                arguments = listOf(navArgument("restaurantId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val restaurantId = backStackEntry.arguments?.getString("restaurantId") ?: return@composable
-
-                ProfileScreen(
-                    onBack = { navController.popBackStack() },
-                    onLoginSuccess = {
-                        navController.navigate(AppRoutes.addReview(restaurantId)) {
-                            popUpTo(AppRoutes.LOGIN_FOR_REVIEW) { inclusive = true }
-                        }
-                    }
-                )
-            }
         }
     }
 }
