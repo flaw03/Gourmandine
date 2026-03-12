@@ -46,7 +46,11 @@ class PlacesRepository(private val placesClient: PlacesClient) {
         Place.Field.PHOTO_METADATAS,
         Place.Field.EDITORIAL_SUMMARY,
         Place.Field.NATIONAL_PHONE_NUMBER,
-        Place.Field.REVIEWS
+        Place.Field.REVIEWS,
+        Place.Field.TYPES,
+        Place.Field.DINE_IN,
+        Place.Field.DELIVERY,
+        Place.Field.TAKEOUT,
     )
 
     suspend fun fetchGoogleReviews(placeId: String): List<Review> {
@@ -98,13 +102,15 @@ class PlacesRepository(private val placesClient: PlacesClient) {
         }
     }
 
-    suspend fun searchByText(query: String): PlacesResult {
+    suspend fun searchByText(query: String, lat: Double? = null, lng: Double? = null): PlacesResult {
         return try {
-            val request = SearchByTextRequest.builder(query, placeFields)
+            val builder = SearchByTextRequest.builder(query, placeFields)
                 .setIncludedType("restaurant")
                 .setMaxResultCount(20)
-                .build()
-            val response = placesClient.searchByText(request).await()
+            if (lat != null && lng != null) {
+                builder.setLocationBias(CircularBounds.newInstance(LatLng(lat, lng), 50_000.0))
+            }
+            val response = placesClient.searchByText(builder.build()).await()
             val restaurants = response.places.map { it.toRestaurant() }
             PlacesResult.Success(restaurants)
         } catch (e: Exception) {
@@ -146,12 +152,28 @@ class PlacesRepository(private val placesClient: PlacesClient) {
             longitude = location?.longitude ?: 0.0,
             address = formattedAddress ?: "",
             description = editorialSummary ?: "",
-            phoneNumber = nationalPhoneNumber ?: ""
+            phoneNumber = nationalPhoneNumber ?: "",
+            cuisineType = extractCuisineType(placeTypes),
+            hasDineIn = dineIn == Place.BooleanPlaceAttributeValue.TRUE,
+            hasDelivery = delivery == Place.BooleanPlaceAttributeValue.TRUE,
+            hasTakeout = takeout == Place.BooleanPlaceAttributeValue.TRUE,
         )
     }
 
     private fun extractCountry(address: String?): String {
         if (address.isNullOrBlank()) return ""
         return address.split(",").lastOrNull()?.trim() ?: ""
+    }
+
+    private fun extractCuisineType(types: List<String>?): String {
+        if (types == null) return ""
+        val cuisineRaw = types.firstOrNull { type ->
+            type.endsWith("_restaurant") && type != "restaurant"
+        } ?: return ""
+        return cuisineRaw
+            .removeSuffix("_restaurant")
+            .replace("_", " ")
+            .split(" ")
+            .joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
     }
 }

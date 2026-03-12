@@ -14,5 +14,8 @@ data class Restaurant(
     val address: String = "",
     val description: String = "",
     val phoneNumber: String = "",
-    val cuisineType: String = ""
+    val cuisineType: String = "",
+    val hasDineIn: Boolean = false,
+    val hasDelivery: Boolean = false,
+    val hasTakeout: Boolean = false,
 )
