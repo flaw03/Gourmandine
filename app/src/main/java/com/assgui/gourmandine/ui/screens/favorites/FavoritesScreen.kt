@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.ui.screens.favorites
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,17 +43,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.assgui.gourmandine.data.model.Favorite
-import com.assgui.gourmandine.ui.components.AppBottomNavBar
+import com.assgui.gourmandine.ui.components.MapHeaderOverlay
 import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.theme.AppColors
 import com.assgui.gourmandine.ui.theme.AppShapes
 
 @Composable
 fun FavoritesScreen(
+    isSheet: Boolean = false,
     onBack: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToReservations: () -> Unit = {},
+    onFavoriteRemoved: (String) -> Unit = {},
+    onViewOnMap: (String) -> Unit = {},
     viewModel: FavoritesViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -62,13 +66,16 @@ fun FavoritesScreen(
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        AppBottomNavBar(
-            currentTab = NavTab.FAVORITES,
-            onNavigateToHome = onNavigateToHome,
-            onNavigateToProfile = onNavigateToProfile,
-            onNavigateToFavorites = {},
-            onNavigateToReservations = onNavigateToReservations
-        )
+        if (!isSheet) {
+            MapHeaderOverlay(
+                currentTab = NavTab.FAVORITES,
+                onNavigateToHome = onNavigateToHome,
+                onNavigateToProfile = onNavigateToProfile,
+                onNavigateToFavorites = {},
+                onNavigateToReservations = onNavigateToReservations,
+                isLoggedIn = true
+            )
+        }
 
         Box(modifier = Modifier.weight(1f)) {
             when {
@@ -86,7 +93,11 @@ fun FavoritesScreen(
                         items(uiState.favorites, key = { it.restaurantId }) { favorite ->
                             FavoriteCard(
                                 favorite = favorite,
-                                onRemove = { viewModel.removeFavorite(favorite.restaurantId) }
+                                onRemove = {
+                                    viewModel.removeFavorite(favorite.restaurantId)
+                                    onFavoriteRemoved(favorite.restaurantId)
+                                },
+                                onViewOnMap = { onViewOnMap(favorite.restaurantId) }
                             )
                         }
                     }
@@ -100,10 +111,13 @@ fun FavoritesScreen(
 @Composable
 private fun FavoriteCard(
     favorite: Favorite,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onViewOnMap: () -> Unit = {}
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onViewOnMap),
         shape = AppShapes.Large,
         colors = CardDefaults.cardColors(containerColor = AppColors.SurfaceCard),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)

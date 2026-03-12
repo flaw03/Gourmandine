@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.assgui.gourmandine.ui.components.AppBottomNavBar
+import com.assgui.gourmandine.ui.components.MapHeaderOverlay
 import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthUiState
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthViewModel
@@ -72,6 +73,7 @@ enum class AuthScreen {
 
 @Composable
 fun ProfileScreen(
+    isSheet: Boolean = false,
     onBack: () -> Unit = {},
     onLoginSuccess: (() -> Unit)? = null,
     onNavigateToHome: () -> Unit = {},
@@ -91,6 +93,7 @@ fun ProfileScreen(
 
     if (uiState.isLoggedIn) {
         ProfileContent(
+            isSheet = isSheet,
             uiState = uiState,
             onLogout = { viewModel.logout() },
             onBack = onBack,
@@ -102,7 +105,11 @@ fun ProfileScreen(
             onEditNomChange = viewModel::onEditNomChange,
             onEditPrenomChange = viewModel::onEditPrenomChange,
             onEditPhoneChange = viewModel::onEditPhoneChange,
-            onSaveProfile = { viewModel.saveProfile() }
+            onSaveProfile = { viewModel.saveProfile() },
+            onCuisineToggle = viewModel::onCuisineToggle,
+            onBudgetToggle = viewModel::onBudgetToggle,
+            onPreferredCityChange = viewModel::onPreferredCityChange,
+            onPreferredCitySave = viewModel::onPreferredCitySave
         )
     } else {
         when (currentScreen) {
@@ -140,6 +147,7 @@ fun ProfileScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(
+    isSheet: Boolean = false,
     uiState: AuthUiState,
     onLogout: () -> Unit,
     onBack: () -> Unit,
@@ -151,7 +159,11 @@ private fun ProfileContent(
     onEditNomChange: (String) -> Unit,
     onEditPrenomChange: (String) -> Unit,
     onEditPhoneChange: (String) -> Unit,
-    onSaveProfile: () -> Unit
+    onSaveProfile: () -> Unit,
+    onCuisineToggle: (String) -> Unit,
+    onBudgetToggle: (String) -> Unit,
+    onPreferredCityChange: (String) -> Unit,
+    onPreferredCitySave: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -160,13 +172,16 @@ private fun ProfileContent(
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        AppBottomNavBar(
-            currentTab = NavTab.PROFILE,
-            onNavigateToHome = onNavigateToHome,
-            onNavigateToProfile = {},
-            onNavigateToFavorites = onNavigateToFavorites,
-            onNavigateToReservations = onNavigateToReservations
-        )
+        if (!isSheet) {
+            MapHeaderOverlay(
+                currentTab = NavTab.PROFILE,
+                onNavigateToHome = onNavigateToHome,
+                onNavigateToProfile = {},
+                onNavigateToFavorites = onNavigateToFavorites,
+                onNavigateToReservations = onNavigateToReservations,
+                isLoggedIn = true
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -276,7 +291,15 @@ private fun ProfileContent(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Section préférences
-            PreferencesSection()
+            PreferencesSection(
+                selectedCuisines = uiState.preferredCuisines,
+                selectedBudgets = uiState.preferredBudgets,
+                city = uiState.preferredCity,
+                onCuisineToggle = onCuisineToggle,
+                onBudgetToggle = onBudgetToggle,
+                onCityChange = onPreferredCityChange,
+                onCitySave = onPreferredCitySave
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -443,12 +466,17 @@ private fun EditProfileSheet(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PreferencesSection() {
+private fun PreferencesSection(
+    selectedCuisines: Set<String>,
+    selectedBudgets: Set<String>,
+    city: String,
+    onCuisineToggle: (String) -> Unit,
+    onBudgetToggle: (String) -> Unit,
+    onCityChange: (String) -> Unit,
+    onCitySave: () -> Unit
+) {
     val cuisines = listOf("Française", "Italienne", "Asiatique", "Mexicaine", "Japonaise", "Américaine")
     val budgets = listOf("€", "€€", "€€€")
-    var selectedCuisines by remember { mutableStateOf(setOf<String>()) }
-    var selectedBudgets by remember { mutableStateOf(setOf<String>()) }
-    var city by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -467,9 +495,11 @@ private fun PreferencesSection() {
 
         OutlinedTextField(
             value = city,
-            onValueChange = { city = it },
+            onValueChange = onCityChange,
             label = { Text("Ville préférée") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { if (!it.isFocused) onCitySave() },
             singleLine = true,
             shape = AppShapes.Large,
             colors = OutlinedTextFieldDefaults.colors(
@@ -491,12 +521,9 @@ private fun PreferencesSection() {
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             cuisines.forEach { cuisine ->
-                val selected = cuisine in selectedCuisines
                 FilterChip(
-                    selected = selected,
-                    onClick = {
-                        selectedCuisines = if (selected) selectedCuisines - cuisine else selectedCuisines + cuisine
-                    },
+                    selected = cuisine in selectedCuisines,
+                    onClick = { onCuisineToggle(cuisine) },
                     label = { Text(cuisine, fontSize = 12.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = AppColors.OrangeLight,
@@ -514,12 +541,9 @@ private fun PreferencesSection() {
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             budgets.forEach { budget ->
-                val selected = budget in selectedBudgets
                 FilterChip(
-                    selected = selected,
-                    onClick = {
-                        selectedBudgets = if (selected) selectedBudgets - budget else selectedBudgets + budget
-                    },
+                    selected = budget in selectedBudgets,
+                    onClick = { onBudgetToggle(budget) },
                     label = { Text(budget, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = AppColors.OrangeLight,

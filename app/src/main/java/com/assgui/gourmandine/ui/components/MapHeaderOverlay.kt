@@ -34,22 +34,24 @@ import com.assgui.gourmandine.ui.theme.AppShapes
 enum class NavTab { HOME, PROFILE, FAVORITES, RESERVATIONS }
 
 @Composable
-fun AppBottomNavBar(
+fun MapHeaderOverlay(
     currentTab: NavTab,
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToFavorites: () -> Unit,
-    onNavigateToReservations: () -> Unit
+    onNavigateToReservations: () -> Unit,
+    isLoggedIn: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     val title = when (currentTab) {
+        NavTab.HOME -> "Gourmandine"
         NavTab.PROFILE -> "Mon Profil"
         NavTab.FAVORITES -> "Mes Favoris"
         NavTab.RESERVATIONS -> "Mes Réservations"
-        NavTab.HOME -> "Gourmandine"
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -86,25 +88,27 @@ fun AppBottomNavBar(
                     selected = currentTab == NavTab.PROFILE,
                     onClick = onNavigateToProfile
                 )
-                NavIconButton(
-                    icon = Icons.Default.Favorite,
-                    label = "Favoris",
-                    selected = currentTab == NavTab.FAVORITES,
-                    onClick = onNavigateToFavorites
-                )
-                NavIconButton(
-                    icon = Icons.AutoMirrored.Filled.EventNote,
-                    label = "Réservations",
-                    selected = currentTab == NavTab.RESERVATIONS,
-                    onClick = onNavigateToReservations
-                )
+                if (isLoggedIn) {
+                    NavIconButton(
+                        icon = Icons.Default.Favorite,
+                        label = "Favoris",
+                        selected = currentTab == NavTab.FAVORITES,
+                        onClick = onNavigateToFavorites
+                    )
+                    NavIconButton(
+                        icon = Icons.AutoMirrored.Filled.EventNote,
+                        label = "Réservations",
+                        selected = currentTab == NavTab.RESERVATIONS,
+                        onClick = onNavigateToReservations
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun NavIconButton(
+internal fun NavIconButton(
     icon: ImageVector,
     label: String,
     selected: Boolean,

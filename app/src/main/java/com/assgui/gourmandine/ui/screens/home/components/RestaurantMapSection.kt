@@ -46,6 +46,8 @@ import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.clustering.Clustering
+import com.assgui.gourmandine.ui.components.MapHeaderOverlay
+import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.theme.AppColors
 
 
@@ -156,9 +158,11 @@ fun RestaurantMapSection(
         }
 
         MapHeaderOverlay(
-            onProfileClick = onProfileClick,
-            onReservationClick = onReservationClick,
-            onFavoritesClick = onFavoritesClick,
+            currentTab = NavTab.HOME,
+            onNavigateToHome = {},
+            onNavigateToProfile = onProfileClick,
+            onNavigateToFavorites = onFavoritesClick,
+            onNavigateToReservations = onReservationClick,
             isLoggedIn = isLoggedIn,
             modifier = Modifier.align(Alignment.TopStart)
         )
