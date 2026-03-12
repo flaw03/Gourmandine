@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.LaunchedEffect
 import com.assgui.gourmandine.data.model.Restaurant
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
@@ -69,6 +70,9 @@ fun RestaurantMapSection(
     onClusterClick: (LatLngBounds) -> Unit,
     onProfileClick: () -> Unit,
     onReservationClick: () -> Unit,
+    onFavoritesClick: () -> Unit = {},
+    isLoggedIn: Boolean = false,
+    onCameraIdle: (Double, Double) -> Unit = { _, _ -> },
     onMyLocationClick: () -> Unit = {},
     userLocation: LatLng? = null,
     isLocationButtonVisible: Boolean = true,
@@ -90,6 +94,12 @@ fun RestaurantMapSection(
             cameraPositionState = cameraPositionState,
             contentPadding = PaddingValues(bottom = mapBottomPadding)
         ) {
+            LaunchedEffect(cameraPositionState.isMoving) {
+                if (!cameraPositionState.isMoving) {
+                    val pos = cameraPositionState.position.target
+                    onCameraIdle(pos.latitude, pos.longitude)
+                }
+            }
             // Clustering for unselected markers only
             Clustering(
                 items = unselectedItems,
@@ -148,6 +158,8 @@ fun RestaurantMapSection(
         MapHeaderOverlay(
             onProfileClick = onProfileClick,
             onReservationClick = onReservationClick,
+            onFavoritesClick = onFavoritesClick,
+            isLoggedIn = isLoggedIn,
             modifier = Modifier.align(Alignment.TopStart)
         )
 

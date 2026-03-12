@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -33,7 +34,9 @@ import com.assgui.gourmandine.ui.theme.AppColors
 @Composable
 fun RestaurantInfoHeader(
     restaurant: Restaurant,
+    isFavorite: Boolean = false,
     onAddReview: () -> Unit,
+    onToggleFavorite: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Status badge + country
@@ -63,7 +66,11 @@ fun RestaurantInfoHeader(
             color = Color.Black,
             modifier = Modifier.weight(1f)
         )
-        ActionButtons(onAddReview = onAddReview)
+        ActionButtons(
+            isFavorite = isFavorite,
+            onAddReview = onAddReview,
+            onToggleFavorite = onToggleFavorite
+        )
     }
 
     Spacer(modifier = Modifier.height(8.dp))
@@ -112,17 +119,23 @@ private fun CountryIndicator(country: String) {
 }
 
 @Composable
-private fun ActionButtons(onAddReview: () -> Unit) {
+private fun ActionButtons(
+    isFavorite: Boolean,
+    onAddReview: () -> Unit,
+    onToggleFavorite: () -> Unit
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         ActionIconButton(
             icon = Icons.Default.RateReview,
             contentDescription = "Ajouter un avis",
+            tint = AppColors.OrangeAccent,
             onClick = onAddReview
         )
         ActionIconButton(
-            icon = Icons.Default.Bookmark,
-            contentDescription = "Sauvegarder",
-            onClick = { }
+            icon = if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+            contentDescription = if (isFavorite) "Retirer des favoris" else "Ajouter aux favoris",
+            tint = if (isFavorite) AppColors.OrangeAccent else AppColors.LightGray,
+            onClick = onToggleFavorite
         )
     }
 }
@@ -131,20 +144,21 @@ private fun ActionButtons(onAddReview: () -> Unit) {
 private fun ActionIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
+    tint: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(40.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(AppColors.OrangeAccent.copy(alpha = 0.15f))
+            .background(tint.copy(alpha = 0.15f))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = AppColors.OrangeAccent,
+            tint = tint,
             modifier = Modifier.size(22.dp)
         )
     }

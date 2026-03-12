@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,13 +27,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.abs
+import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -44,7 +49,12 @@ import androidx.navigation.NavController
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.navigation.AppRoutes
 import com.assgui.gourmandine.ui.components.RestaurantDetailSheet
+import com.assgui.gourmandine.ui.screens.addreview.AddReviewScreen
+import com.assgui.gourmandine.ui.screens.profile.ProfileScreen
+import com.assgui.gourmandine.ui.screens.reservation.ReservationViewModel
+import com.assgui.gourmandine.ui.screens.reservation.components.ReservationBookingDialog
 import com.google.firebase.auth.FirebaseAuth
+import com.assgui.gourmandine.ui.screens.home.components.FilterBottomSheet
 import com.assgui.gourmandine.ui.screens.home.components.RestaurantMapSection
 import com.assgui.gourmandine.ui.screens.home.components.SearchBarRow
 import com.assgui.gourmandine.ui.screens.home.components.SheetDragHandle
@@ -62,13 +72,28 @@ fun HomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = viewModel()
 ) {
+    val reservationViewModel: ReservationViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+    var restaurantToBook by remember { mutableStateOf<Restaurant?>(null) }
+    var reviewRestaurant by remember { mutableStateOf<Restaurant?>(null) }
+    var pendingLoginAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showLoginOverlay by remember { mutableStateOf(false) }
+
+    val isLoggedIn by produceState(initialValue = FirebaseAuth.getInstance().currentUser != null) {
+        val auth = FirebaseAuth.getInstance()
+        val listener = com.google.firebase.auth.FirebaseAuth.AuthStateListener { firebaseAuth ->
+            value = firebaseAuth.currentUser != null
+        }
+        auth.addAuthStateListener(listener)
+        awaitDispose { auth.removeAuthStateListener(listener) }
+    }
 
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
+    var showFilterSheet by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(uiState.cameraPosition, uiState.cameraZoom)
@@ -85,7 +110,7 @@ fun HomeScreen(
             .onGloballyPositioned { containerHeightPx = it.size.height }
     ) {
         val fullHeightPx = containerHeightPx.toFloat()
-        val downHeightPx = with(density) { 120.dp.toPx() }
+        val downHeightPx = with(density) { 140.dp.toPx() }
         val middleHeightPx = fullHeightPx * 0.5f
         val upHeightPx = fullHeightPx * 0.9f
 
@@ -118,7 +143,7 @@ fun HomeScreen(
 
         val middleHeightDp = with(density) { middleHeightPx.toDp() }
         val mapBottomPaddingDp = when (currentPosition) {
-            SheetPosition.Down -> 120.dp
+            SheetPosition.Down -> 140.dp
             SheetPosition.Middle -> middleHeightDp
             SheetPosition.Up -> middleHeightDp
         }
@@ -165,11 +190,11 @@ fun HomeScreen(
             }
         }
 
-        LaunchedEffect(uiState.restaurants.isEmpty()) {
-            if (uiState.restaurants.isEmpty()) {
-                sheetState.animateTo(SheetPosition.Down)
-            } else {
-                sheetState.animateTo(SheetPosition.Middle)
+        LaunchedEffect(uiState.restaurants.isEmpty(), uiState.isLoading) {
+            when {
+                uiState.isLoading -> Unit // ne pas bouger pendant le chargement
+                uiState.restaurants.isEmpty() && uiState.searchQuery.isBlank() -> sheetState.animateTo(SheetPosition.Down)
+                uiState.restaurants.isNotEmpty() -> sheetState.animateTo(SheetPosition.Middle)
             }
         }
 
@@ -185,6 +210,9 @@ fun HomeScreen(
             onClusterClick = viewModel::onClusterClick,
             onProfileClick = { navController.navigate(AppRoutes.PROFILE) },
             onReservationClick = { navController.navigate(AppRoutes.RESERVATION) },
+            onFavoritesClick = { navController.navigate(AppRoutes.FAVORITES) },
+            isLoggedIn = isLoggedIn,
+            onCameraIdle = viewModel::onCameraIdle,
             onMyLocationClick = viewModel::onMyLocationClick,
             userLocation = uiState.userLocation,
             isLocationButtonVisible = isLocationButtonVisible,
@@ -201,8 +229,21 @@ fun HomeScreen(
                 .fillMaxWidth()
                 .height(visibleSheetHeightDp)
                 .offset { IntOffset(0, sheetState.requireOffset().toInt()) }
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                .background(Color.White)
+                .clip(AppShapes.Sheet)
+                .background(AppColors.SurfaceSheet)
+                .pointerInput(Unit) {
+                    var totalX = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { totalX = 0f },
+                        onHorizontalDrag = { _, dragAmount -> totalX += dragAmount },
+                        onDragEnd = {
+                            if (abs(totalX) > 80.dp.toPx()) {
+                                if (totalX > 0) navController.navigate(AppRoutes.PROFILE)
+                                else navController.navigate(AppRoutes.RESERVATION)
+                            }
+                        }
+                    )
+                }
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Column(
@@ -215,7 +256,7 @@ fun HomeScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.White)
+                            .background(AppColors.SurfaceSheet)
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         SearchBarRow(
@@ -232,16 +273,23 @@ fun HomeScreen(
                                         sheetState.animateTo(SheetPosition.Up)
                                     }
                                 }
-                            }
+                            },
+                            onFilterClick = { showFilterSheet = true },
+                            activeFilterCount = uiState.activeFilters.size + if (uiState.maxDistanceKm != null) 1 else 0,
+                            onClearQuery = { viewModel.onSearchQueryChange("") }
                         )
                     }
+
                 }
 
                 SheetScrollableContent(
                     uiState = uiState,
                     listState = listState,
                     onCardClick = viewModel::onCardClick,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    filteredRestaurants = uiState.filteredRestaurants,
+                    activeFilters = uiState.activeFilters,
+                    onClearFilters = viewModel::clearFilters
                 )
             }
         }
@@ -251,16 +299,97 @@ fun HomeScreen(
             visible = uiState.detailRestaurant != null,
             reviews = uiState.detailReviews,
             googleReviews = uiState.detailGoogleReviews,
+            isFavorite = uiState.detailRestaurant?.id?.let { it in uiState.favoriteIds } ?: false,
             onDismiss = viewModel::onDismissDetail,
             onAddReview = { restaurant ->
                 val user = FirebaseAuth.getInstance().currentUser
                 if (user != null) {
-                    navController.navigate(AppRoutes.addReview(restaurant.id))
+                    reviewRestaurant = restaurant
                 } else {
-                    navController.navigate(AppRoutes.loginForReview(restaurant.id))
+                    pendingLoginAction = { reviewRestaurant = restaurant }
+                    showLoginOverlay = true
+                }
+            },
+            onReserve = { restaurant ->
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user != null) {
+                    restaurantToBook = restaurant
+                } else {
+                    pendingLoginAction = { restaurantToBook = restaurant }
+                    showLoginOverlay = true
+                }
+            },
+            onToggleFavorite = { restaurant ->
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user != null) {
+                    viewModel.onToggleFavorite(restaurant)
+                } else {
+                    pendingLoginAction = { viewModel.onToggleFavorite(restaurant) }
+                    showLoginOverlay = true
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
+
+        if (showFilterSheet) {
+            FilterBottomSheet(
+                activeFilters = uiState.activeFilters,
+                maxDistanceKm = uiState.maxDistanceKm,
+                onToggleFilter = viewModel::onToggleFilter,
+                onDistanceChange = viewModel::onDistanceFilterChange,
+                onClearFilters = viewModel::clearFilters,
+                onDismiss = { showFilterSheet = false }
+            )
+        }
+
+        // Overlay login (réservation, favori, avis)
+        if (showLoginOverlay) {
+            ProfileScreen(
+                onBack = {
+                    showLoginOverlay = false
+                    pendingLoginAction = null
+                },
+                onLoginSuccess = {
+                    showLoginOverlay = false
+                    pendingLoginAction?.invoke()
+                    pendingLoginAction = null
+                }
+            )
+        }
+
+        // Overlay AddReview (directement dans HomeScreen, sans navigation)
+        reviewRestaurant?.let { restaurant ->
+            AddReviewScreen(
+                restaurant = restaurant,
+                onDismiss = { reviewRestaurant = null },
+                onReviewSubmitted = {
+                    viewModel.onMarkerDetailClick(restaurant.id)
+                    reviewRestaurant = null
+                }
+            )
+        }
+
+        restaurantToBook?.let { restaurant ->
+            ReservationBookingDialog(
+                restaurant = restaurant,
+                onDismiss = { restaurantToBook = null },
+                onConfirm = { dateMs, partySize, notes ->
+                    val imageUrl = restaurant.imageUrls.firstOrNull() ?: ""
+                    reservationViewModel.addReservation(
+                        com.assgui.gourmandine.data.model.Reservation(
+                            restaurantId = restaurant.id,
+                            restaurantName = restaurant.name,
+                            restaurantAddress = restaurant.address,
+                            restaurantImageUrl = imageUrl,
+                            dateMs = dateMs,
+                            partySize = partySize,
+                            notes = notes
+                        )
+                    )
+                    restaurantToBook = null
+                    navController.navigate(AppRoutes.RESERVATION)
+                }
+            )
+        }
     }
 }

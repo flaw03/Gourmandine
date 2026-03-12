@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,176 +24,187 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.ui.theme.AppColors
-
+import com.assgui.gourmandine.ui.theme.AppShapes
 
 @Composable
 fun RestaurantCard(
     restaurant: Restaurant,
     isSelected: Boolean = false,
+    distanceKm: Float? = null,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = if (isSelected) androidx.compose.foundation.BorderStroke(
-            2.dp, AppColors.OrangeAccent
-        ) else null
+        shape = AppShapes.Card,
+        colors = CardDefaults.cardColors(containerColor = AppColors.SurfaceCard),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, AppColors.OrangeAccent) else null
     ) {
         Column {
-            Row(
+            // Image pleine largeur en haut
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(160.dp)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
             ) {
-                // Square image with carousel
-                Box(
-                    modifier = Modifier
-                        .size(90.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    if (restaurant.imageUrls.isNotEmpty()) {
-                        val pagerState =
-                            rememberPagerState(pageCount = { restaurant.imageUrls.size })
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize()
-                        ) { page ->
-                            AsyncImage(
-                                model = restaurant.imageUrls[page],
-                                contentDescription = "${restaurant.name} photo ${page + 1}",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                if (restaurant.imageUrls.isNotEmpty()) {
+                    val pagerState = rememberPagerState(pageCount = { restaurant.imageUrls.size })
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        AsyncImage(
+                            model = restaurant.imageUrls[page],
+                            contentDescription = "${restaurant.name} photo ${page + 1}",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    // Gradient overlay bas
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.3f))
+                                )
                             )
-                        }
-                        if (restaurant.imageUrls.size > 1) {
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(bottom = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                repeat(restaurant.imageUrls.size) { index ->
-                                    Box(
-                                        modifier = Modifier
-                                            .size(5.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (index == pagerState.currentPage) Color.White
-                                                else Color.White.copy(alpha = 0.4f)
-                                            )
-                                    )
-                                }
+                    )
+
+                    // Pagination dots
+                    if (restaurant.imageUrls.size > 1) {
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            repeat(restaurant.imageUrls.size) { index ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (index == pagerState.currentPage) 10.dp else 6.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (index == pagerState.currentPage) AppColors.OrangeAccent
+                                            else Color.White.copy(alpha = 0.6f)
+                                        )
+                                )
                             }
                         }
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(AppColors.MediumGray),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("No image", color = Color.Gray, fontSize = 10.sp)
-                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(AppColors.MediumGray),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No image", color = AppColors.TextTertiary, fontSize = 12.sp)
                     }
                 }
 
-                // Info section
-                Column(
+                // Badge Ouvert/Fermé (top-left overlay)
+                val statusText = if (restaurant.isOpen) "Ouvert" else "Fermé"
+                val statusColor = if (restaurant.isOpen) AppColors.Green else AppColors.Red
+                Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                        .background(statusColor, AppShapes.Pill)
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = restaurant.name,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color.Black,
-                        maxLines = 1
+                        text = statusText,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp
                     )
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = AppColors.OrangeAccent,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "${restaurant.rating}",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            color = Color.DarkGray
-                        )
-                        Text("·", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.Gray)
-                        Text(
-                            text = "${restaurant.reviewCount} Reviews",
-                            fontSize = 13.sp,
-                            color = Color.Gray
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val statusText = if (restaurant.isOpen) "Open" else "Closed"
-                        val statusColor =
-                            if (restaurant.isOpen) AppColors.Green else AppColors.Red
-
-                        Box(
-                            modifier = Modifier
-                                .background(statusColor, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 10.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = statusText,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            )
-                        }
-
-                        if (restaurant.cuisineType.isNotBlank()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(AppColors.OrangeAccent)
-                                )
-                                Text(
-                                    text = restaurant.cuisineType,
-                                    fontSize = 13.sp,
-                                    color = Color.DarkGray,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
                 }
             }
 
+            // Info strip
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Nom
+                Text(
+                    text = restaurant.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = AppColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // Row: ⭐ 4.5 · Italienne · 1.2 km · €€
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = AppColors.OrangeAccent,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "%.1f".format(restaurant.rating),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        color = AppColors.TextPrimary
+                    )
+
+                    if (restaurant.cuisineType.isNotBlank()) {
+                        Text("·", fontSize = 12.sp, color = AppColors.TextTertiary)
+                        Text(
+                            text = restaurant.cuisineType,
+                            fontSize = 12.sp,
+                            color = AppColors.TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+
+                    if (distanceKm != null) {
+                        Text("·", fontSize = 12.sp, color = AppColors.TextTertiary)
+                        Text(
+                            text = "%.1f km".format(distanceKm),
+                            fontSize = 12.sp,
+                            color = AppColors.TextSecondary
+                        )
+                    }
+
+                    val priceLabel = "€".repeat(restaurant.priceLevel.coerceIn(1, 3))
+                    Text("·", fontSize = 12.sp, color = AppColors.TextTertiary)
+                    Text(
+                        text = priceLabel,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppColors.OrangeAccent
+                    )
+                }
+            }
         }
     }
 }
@@ -213,6 +223,7 @@ private fun RestaurantCardPreview() {
             priceLevel = 2,
             isOpen = true
         ),
-        isSelected = true
+        isSelected = true,
+        distanceKm = 1.2f
     )
 }

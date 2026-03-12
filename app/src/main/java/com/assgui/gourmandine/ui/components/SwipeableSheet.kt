@@ -2,6 +2,7 @@ package com.assgui.gourmandine.ui.components
 
 import androidx.compose.animation.core.Animatable
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -24,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -43,7 +43,7 @@ fun SwipeableSheet(
     val density = LocalDensity.current
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val screenHeight = with(density) { screenHeightDp.toPx() }
-    val topOffset = with(density) { (screenHeightDp * 0.1f).toPx() }
+    val topOffset = with(density) { (screenHeightDp * 0.05f).toPx() }
     val scope = rememberCoroutineScope()
 
     val offsetY = remember { Animatable(screenHeight) }
@@ -66,8 +66,8 @@ fun SwipeableSheet(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                    .background(Color.White)
+                    .clip(AppShapes.Sheet)
+                    .background(AppColors.SurfaceSheet)
             ) {
                 // Drag handle zone
                 Box(

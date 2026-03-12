@@ -33,7 +33,7 @@ fun ImageCarousel(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(260.dp)
+            .height(280.dp)
     ) {
         if (imageUrls.isNotEmpty()) {
             val pagerState = rememberPagerState(pageCount = { imageUrls.size })
@@ -45,9 +45,7 @@ fun ImageCarousel(
                 AsyncImage(
                     model = imageUrls[page],
                     contentDescription = "$contentDescription photo",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(16.dp)),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -62,11 +60,11 @@ fun ImageCarousel(
                     repeat(imageUrls.size) { index ->
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(if (index == pagerState.currentPage) 10.dp else 6.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (index == pagerState.currentPage) Color.White
-                                    else Color.White.copy(alpha = 0.4f)
+                                    if (index == pagerState.currentPage) AppColors.OrangeAccent
+                                    else Color.White.copy(alpha = 0.6f)
                                 )
                         )
                     }

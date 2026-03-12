@@ -16,7 +16,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,9 +33,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.ui.components.RestaurantCard
 import com.assgui.gourmandine.ui.screens.home.HomeUiState
+import com.assgui.gourmandine.ui.screens.home.RestaurantFilter
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 @Composable
 fun SheetDragHandle() {
@@ -47,7 +57,7 @@ fun SheetDragHandle() {
                 .width(40.dp)
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(AppColors.LightGray)
+                .background(AppColors.OrangeLight)
         )
     }
 }
@@ -57,7 +67,10 @@ fun SheetScrollableContent(
     uiState: HomeUiState,
     listState: LazyListState,
     onCardClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    filteredRestaurants: List<Restaurant> = uiState.filteredRestaurants,
+    activeFilters: Set<RestaurantFilter> = uiState.activeFilters,
+    onClearFilters: () -> Unit = {}
 ) {
     when {
         uiState.isLoading -> {
@@ -77,6 +90,39 @@ fun SheetScrollableContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(uiState.errorMessage ?: "", color = MaterialTheme.colorScheme.error)
+            }
+        }
+        filteredRestaurants.isEmpty() && uiState.restaurants.isNotEmpty() -> {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(AppColors.OrangeAccent.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SearchOff,
+                        contentDescription = null,
+                        tint = AppColors.OrangeAccent,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("Aucun résultat pour ces filtres", color = Color.DarkGray, fontSize = 15.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Essayez d'élargir vos critères", color = Color.Gray, fontSize = 13.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onClearFilters,
+                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent)
+                ) {
+                    Text("Réinitialiser les filtres", color = Color.White)
+                }
             }
         }
         uiState.restaurants.isEmpty() -> {
@@ -108,16 +154,33 @@ fun SheetScrollableContent(
                     }
                 }
 
-                items(items = uiState.restaurants, key = { it.id }) { restaurant ->
+                items(items = filteredRestaurants, key = { it.id }) { restaurant ->
+                    val distanceKm = uiState.userLocation?.let { userLoc ->
+                        haversineKmLocal(
+                            userLoc.latitude, userLoc.longitude,
+                            restaurant.latitude, restaurant.longitude
+                        ).toFloat()
+                    }
                     RestaurantCard(
                         restaurant = restaurant,
                         isSelected = restaurant.id == uiState.selectedRestaurantId,
+                        distanceKm = distanceKm,
                         onClick = { onCardClick(restaurant.id) }
                     )
                 }
             }
         }
     }
+}
+
+private fun haversineKmLocal(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+    val r = 6371.0
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLng = Math.toRadians(lng2 - lng1)
+    val sinLat = sin(dLat / 2)
+    val sinLng = sin(dLng / 2)
+    val a = sinLat * sinLat + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sinLng * sinLng
+    return 2 * r * atan2(sqrt(a), sqrt(1 - a))
 }
 
 @Composable
