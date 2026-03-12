@@ -1,18 +1,19 @@
 package com.assgui.gourmandine.ui.components
 
 import androidx.compose.animation.core.Animatable
-import com.assgui.gourmandine.ui.theme.AppColors
-import com.assgui.gourmandine.ui.theme.AppShapes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -30,11 +31,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
-fun SwipeableSheet(
+fun PageSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -42,26 +45,38 @@ fun SwipeableSheet(
 ) {
     val density = LocalDensity.current
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val screenHeight = with(density) { screenHeightDp.toPx() }
-    val topOffset = with(density) { (screenHeightDp * 0.05f).toPx() }
-    val scope = rememberCoroutineScope()
+    val navBarHeight = WindowInsets.navigationBars.getBottom(density).toFloat()
+    val statusBarHeight = WindowInsets.statusBars.getTop(density).toFloat()
+    val screenHeight = with(density) { screenHeightDp.toPx() } + navBarHeight
 
+    val headerHeight = with(density) { 72.dp.toPx() }
+    val topOffset = statusBarHeight + headerHeight
+    val sheetHeightDp = with(density) { (screenHeight - topOffset).toDp() }
+
+    val scope = rememberCoroutineScope()
     val offsetY = remember { Animatable(screenHeight) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(visible) {
-        if (visible) {
-            offsetY.animateTo(topOffset, tween(300))
-        } else {
-            offsetY.animateTo(screenHeight, tween(300))
-        }
+        if (visible) offsetY.animateTo(topOffset, tween(300))
+        else offsetY.animateTo(screenHeight, tween(300))
     }
 
     if (visible || offsetY.value < screenHeight) {
         Box(
             modifier = modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .height(sheetHeightDp)
                 .offset { IntOffset(0, (offsetY.value + dragOffset).roundToInt()) }
+                .pointerInput(Unit) {
+                    // Bloque tous les événements tactiles pour éviter qu'ils
+                    // traversent jusqu'à la carte en dessous
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent().changes.forEach { it.consume() }
+                        }
+                    }
+                }
         ) {
             Column(
                 modifier = Modifier
@@ -69,7 +84,6 @@ fun SwipeableSheet(
                     .clip(AppShapes.Sheet)
                     .background(AppColors.SurfaceSheet)
             ) {
-                // Drag handle zone
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -93,8 +107,7 @@ fun SwipeableSheet(
                                     }
                                 },
                                 onVerticalDrag = { _, amount ->
-                                    val newOffset = dragOffset + amount
-                                    dragOffset = newOffset.coerceAtLeast(0f)
+                                    dragOffset = (dragOffset + amount).coerceAtLeast(0f)
                                 }
                             )
                         }
@@ -106,7 +119,7 @@ fun SwipeableSheet(
                             .width(40.dp)
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp))
-                            .background(AppColors.LightGray)
+                            .background(AppColors.OrangeLight)
                     )
                 }
 

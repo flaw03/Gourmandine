@@ -6,34 +6,33 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import com.assgui.gourmandine.ui.theme.AppShapes
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.assgui.gourmandine.data.model.Restaurant
@@ -44,7 +43,9 @@ import com.assgui.gourmandine.ui.components.restaurantdetail.RestaurantInfoHeade
 import com.assgui.gourmandine.ui.components.restaurantdetail.RestaurantMiniMap
 import com.assgui.gourmandine.ui.components.restaurantdetail.ReviewsSection
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RestaurantDetailSheet(
     restaurant: Restaurant?,
@@ -58,24 +59,50 @@ fun RestaurantDetailSheet(
     onToggleFavorite: (Restaurant) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    SwipeableSheet(
-        visible = visible && restaurant != null,
-        onDismiss = onDismiss,
-        modifier = modifier
-    ) { onImageDrag, onImageDragEnd ->
-        restaurant?.let { resto ->
-            RestaurantDetailContent(
-                restaurant = resto,
-                reviews = reviews,
-                googleReviews = googleReviews,
-                isFavorite = isFavorite,
-                onImageDrag = onImageDrag,
-                onImageDragEnd = onImageDragEnd,
-                onAddReview = { onAddReview(resto) },
-                onReserve = { onReserve(resto) },
-                onToggleFavorite = { onToggleFavorite(resto) }
-            )
+    if (!visible || restaurant == null) return
+
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true   // ouvre directement en plein écran
+    )
+
+    // Gap en haut = statusBar + 72dp → laisse le header avec les icônes visible
+    val topInsets = WindowInsets.statusBars.add(WindowInsets(top = 72.dp))
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        windowInsets = topInsets,
+        containerColor = AppColors.SurfaceSheet,
+        shape = AppShapes.Sheet,
+        tonalElevation = 0.dp,
+        scrimColor = Color.Transparent,
+        dragHandle = {
+            // Drag handle dans le style de l'app
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(AppColors.OrangeLight)
+                )
+            }
         }
+    ) {
+        RestaurantDetailContent(
+            restaurant = restaurant,
+            reviews = reviews,
+            googleReviews = googleReviews,
+            isFavorite = isFavorite,
+            onAddReview = { onAddReview(restaurant) },
+            onReserve = { onReserve(restaurant) },
+            onToggleFavorite = { onToggleFavorite(restaurant) }
+        )
     }
 }
 
@@ -85,60 +112,21 @@ private fun RestaurantDetailContent(
     reviews: List<Review>,
     googleReviews: List<Review>,
     isFavorite: Boolean,
-    onImageDrag: (Float) -> Unit,
-    onImageDragEnd: () -> Unit,
     onAddReview: () -> Unit,
     onReserve: () -> Unit,
     onToggleFavorite: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-
-    // Pull-to-dismiss : quand le scroll est en haut et qu'on tire vers le bas
-    val currentOnDrag by rememberUpdatedState(onImageDrag)
-    val currentOnDragEnd by rememberUpdatedState(onImageDragEnd)
-    val pullToClose = remember {
-        object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                // available.y > 0 = scroll vers le bas non consommé (déjà en haut)
-                if (available.y > 0f && scrollState.value == 0) {
-                    currentOnDrag(available.y)
-                }
-                return Offset.Zero
-            }
-
-            override suspend fun onPostFling(
-                consumed: Velocity,
-                available: Velocity
-            ): Velocity {
-                if (scrollState.value == 0 && available.y > 0f) {
-                    currentOnDragEnd()
-                }
-                return Velocity.Zero
-            }
-        }
-    }
-
-    // Pas de fillMaxSize ici : la Column prend sa hauteur naturelle (scrollable)
-    // La contrainte de hauteur vient du SwipeableSheet (sheetHeight calculé)
+    // ModalBottomSheet gère le scroll + drag nativement via NestedScroll
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .nestedScroll(pullToClose)   // parent du scroll → reçoit l'overscroll
-            .verticalScroll(scrollState)
+            .verticalScroll(rememberScrollState())
     ) {
-        // Image avec drag vertical pour piloter la sheet
         ImageCarousel(
             imageUrls = restaurant.imageUrls,
-            contentDescription = restaurant.name,
-            onVerticalDrag = onImageDrag,
-            onVerticalDragEnd = onImageDragEnd
+            contentDescription = restaurant.name
         )
 
-        // Info header
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,7 +145,6 @@ private fun RestaurantDetailContent(
             HorizontalDivider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Adresse
             if (restaurant.address.isNotBlank()) {
                 Row(
                     verticalAlignment = Alignment.Top,
@@ -179,7 +166,6 @@ private fun RestaurantDetailContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Téléphone
             if (restaurant.phoneNumber.isNotBlank()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -200,7 +186,6 @@ private fun RestaurantDetailContent(
                 Spacer(modifier = Modifier.height(14.dp))
             }
 
-            // Description
             if (restaurant.description.isNotBlank()) {
                 HorizontalDivider(color = AppColors.Divider)
                 Spacer(modifier = Modifier.height(14.dp))
@@ -220,7 +205,6 @@ private fun RestaurantDetailContent(
                 Spacer(modifier = Modifier.height(14.dp))
             }
 
-            // Mini map
             HorizontalDivider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(14.dp))
             RestaurantMiniMap(
@@ -228,7 +212,6 @@ private fun RestaurantDetailContent(
                 longitude = restaurant.longitude,
                 restaurantName = restaurant.name
             )
-
             Spacer(modifier = Modifier.height(16.dp))
         }
 
@@ -241,9 +224,7 @@ private fun RestaurantDetailContent(
             onReserve = onReserve
         )
 
-        // Espace de sécurité en bas : compense le topOffset (statusBar + 72dp header)
-        // pour que le dernier élément soit entièrement scrollable et visible
-        Spacer(modifier = Modifier.height(120.dp))
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
