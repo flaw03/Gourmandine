@@ -3,6 +3,7 @@ package com.assgui.gourmandine.data.repository
 import com.assgui.gourmandine.data.model.Review
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 
 class ReviewRepository {
@@ -18,6 +19,29 @@ class ReviewRepository {
                 .await()
             val reviews = snapshot.toObjects(Review::class.java)
             Result.success(reviews)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getReviewsByUser(userId: String, fromCache: Boolean = false): Result<List<Review>> {
+        return try {
+            val source = if (fromCache) Source.CACHE else Source.DEFAULT
+            val snapshot = reviewsCollection
+                .whereEqualTo("userId", userId)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get(source)
+                .await()
+            Result.success(snapshot.toObjects(Review::class.java))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteReview(reviewId: String): Result<Unit> {
+        return try {
+            reviewsCollection.document(reviewId).delete().await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

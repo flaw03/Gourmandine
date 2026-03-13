@@ -3,6 +3,7 @@ package com.assgui.gourmandine.data.model
 data class Review(
     val id: String = "",
     val restaurantId: String = "",
+    val restaurantName: String = "",
     val userId: String = "",
     val userName: String = "",
     val userReviewCount: Int = 0,

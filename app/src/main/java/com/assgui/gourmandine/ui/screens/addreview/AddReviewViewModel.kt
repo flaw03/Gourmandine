@@ -79,7 +79,7 @@ class AddReviewViewModel(
         _uiState.update { it.copy(latitude = latitude, longitude = longitude) }
     }
 
-    fun submitReview(restaurantId: String) {
+    fun submitReview(restaurantId: String, restaurantName: String = "") {
         val state = _uiState.value
         if (state.visitDate == null) {
             _uiState.update { it.copy(errorMessage = "Veuillez sélectionner une date de visite") }
@@ -113,6 +113,7 @@ class AddReviewViewModel(
 
                 val review = Review(
                     restaurantId = restaurantId,
+                    restaurantName = restaurantName,
                     userId = currentUser.uid,
                     userName = currentUser.displayName ?: "Utilisateur",
                     imageUrls = imageUrls,

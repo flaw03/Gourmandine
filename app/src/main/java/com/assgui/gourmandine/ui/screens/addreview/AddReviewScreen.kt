@@ -393,7 +393,7 @@ fun AddReviewScreen(
             onDismiss = { showPreview = false },
             onConfirm = {
                 showPreview = false
-                viewModel.submitReview(restaurant.id)
+                viewModel.submitReview(restaurant.id, restaurant.name)
             }
         )
     }
