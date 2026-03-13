@@ -73,6 +73,7 @@ fun RestaurantMapSection(
     onProfileClick: () -> Unit,
     onReservationClick: () -> Unit,
     onFavoritesClick: () -> Unit = {},
+    activeTab: NavTab = NavTab.HOME,
     isLoggedIn: Boolean = false,
     onCameraIdle: (Double, Double) -> Unit = { _, _ -> },
     onMyLocationClick: () -> Unit = {},
@@ -158,7 +159,7 @@ fun RestaurantMapSection(
         }
 
         MapHeaderOverlay(
-            currentTab = NavTab.HOME,
+            currentTab = activeTab,
             onNavigateToHome = {},
             onNavigateToProfile = onProfileClick,
             onNavigateToFavorites = onFavoritesClick,

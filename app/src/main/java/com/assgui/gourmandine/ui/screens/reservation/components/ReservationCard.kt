@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.ui.screens.reservation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ fun ReservationCard(
     onAddToCalendar: () -> Unit,
     onChangeDate: () -> Unit,
     onAddReview: () -> Unit,
+    onViewOnMap: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -50,7 +52,10 @@ fun ReservationCard(
             .background(Color.White)
             .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.clickable(onClick = onViewOnMap),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             // Restaurant image
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)

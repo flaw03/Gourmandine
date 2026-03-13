@@ -53,6 +53,16 @@ class PlacesRepository(private val placesClient: PlacesClient) {
         Place.Field.TAKEOUT,
     )
 
+    suspend fun fetchPlaceById(placeId: String): Restaurant? {
+        return try {
+            val request = FetchPlaceRequest.builder(placeId, placeFields).build()
+            val response = placesClient.fetchPlace(request).await()
+            response.place.toRestaurant()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun fetchGoogleReviews(placeId: String): List<Review> {
         return try {
             val request = FetchPlaceRequest.builder(placeId, listOf(Place.Field.REVIEWS)).build()

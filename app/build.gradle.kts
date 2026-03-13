@@ -11,6 +11,10 @@ val localProperties = Properties().apply {
     if (file.exists()) load(file.inputStream())
 }
 val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
+val releaseKeystorePath: String = localProperties.getProperty("KEYSTORE_PATH", "")
+val releaseKeystorePassword: String = localProperties.getProperty("KEYSTORE_PASSWORD", "")
+val releaseKeyAlias: String = localProperties.getProperty("KEY_ALIAS", "")
+val releaseKeyPassword: String = localProperties.getProperty("KEY_PASSWORD", "")
 
 android {
     namespace = "com.assgui.gourmandine"
@@ -29,13 +33,24 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(releaseKeystorePath)
+            storePassword = releaseKeystorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -77,6 +92,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.libraries.places:places:4.0.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Splash Screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.4")
