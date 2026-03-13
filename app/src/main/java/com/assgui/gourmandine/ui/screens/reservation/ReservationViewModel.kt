@@ -76,10 +76,26 @@ class ReservationViewModel : ViewModel() {
 
     fun loadReservations() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            repository.getReservations()
+            val now = System.currentTimeMillis()
+
+            // 1. Affichage instantané depuis le cache Firestore
+            repository.getReservations(fromCache = true)
+                .onSuccess { cached ->
+                    if (cached.isNotEmpty()) {
+                        _uiState.update {
+                            it.copy(
+                                upcoming = cached.filter { r -> r.dateMs >= now }.sortedBy { r -> r.dateMs },
+                                past = cached.filter { r -> r.dateMs < now }.sortedByDescending { r -> r.dateMs }
+                            )
+                        }
+                    } else {
+                        _uiState.update { it.copy(isLoading = true, error = null) }
+                    }
+                }
+
+            // 2. Rafraîchissement depuis le serveur en arrière-plan
+            repository.getReservations(fromCache = false)
                 .onSuccess { list ->
-                    val now = System.currentTimeMillis()
                     _uiState.update {
                         it.copy(
                             upcoming = list.filter { r -> r.dateMs >= now }.sortedBy { r -> r.dateMs },
