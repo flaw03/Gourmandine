@@ -49,6 +49,7 @@ data class HomeUiState(
     val activeFilters: Set<RestaurantFilter> = emptySet(),
     val filteredRestaurants: List<Restaurant> = emptyList(),
     val maxDistanceKm: Float? = null,
+    val pendingReview: Boolean = false,
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -147,8 +148,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         s.copy(
                             restaurants = result.restaurants,
                             filteredRestaurants = applyFilters(result.restaurants, s.activeFilters, s.maxDistanceKm, refLat, refLng),
-                            isLoading = false,
-                            cameraPosition = LatLng(lat, lng)
+                            isLoading = false
                         )
                     }
                     loadReviewImagesForRestaurants(result.restaurants)
@@ -204,21 +204,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onCardClick(id: String) {
         val restaurant = _uiState.value.restaurants.find { it.id == id } ?: return
-        val alreadySelected = _uiState.value.selectedRestaurantId == id
-        if (alreadySelected) {
-            // Already selected → open detail
-            _uiState.update { it.copy(detailRestaurant = restaurant, detailReviews = emptyList(), detailGoogleReviews = emptyList()) }
-            loadReviews(id)
-        } else {
-            // Not selected → select + move camera
-            _uiState.update {
-                it.copy(
-                    selectedRestaurantId = id,
-                    cameraPosition = LatLng(restaurant.latitude, restaurant.longitude),
-                    cameraZoom = 16f
-                )
-            }
+        _uiState.update {
+            it.copy(
+                selectedRestaurantId = id,
+                detailRestaurant = restaurant,
+                detailReviews = emptyList(),
+                detailGoogleReviews = emptyList()
+            )
         }
+        loadReviews(id)
     }
 
     fun onMarkerDetailClick(id: String) {
@@ -316,16 +310,28 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 .onSuccess { favorites ->
                     _uiState.update { it.copy(favoriteIds = favorites.map { f -> f.restaurantId }.toSet()) }
                 }
+                .onFailure { e ->
+                    android.util.Log.e("HomeViewModel", "loadFavorites failed: ${e::class.simpleName} - ${e.message}", e)
+                }
         }
     }
 
     fun onToggleFavorite(restaurant: Restaurant) {
+        // Mise à jour optimiste : l'icône bascule instantanément
+        val wasAlreadyFavorite = restaurant.id in _uiState.value.favoriteIds
+        val optimisticIds = _uiState.value.favoriteIds.toMutableSet().apply {
+            if (wasAlreadyFavorite) remove(restaurant.id) else add(restaurant.id)
+        }
+        _uiState.update { it.copy(favoriteIds = optimisticIds) }
         viewModelScope.launch {
             favoritesRepository.toggleFavorite(restaurant)
-                .onSuccess { isNowFavorite ->
-                    val current = _uiState.value.favoriteIds.toMutableSet()
-                    if (isNowFavorite) current.add(restaurant.id) else current.remove(restaurant.id)
-                    _uiState.update { it.copy(favoriteIds = current) }
+                .onFailure { e ->
+                    // Annule si Firebase échoue
+                    val revertedIds = _uiState.value.favoriteIds.toMutableSet().apply {
+                        if (wasAlreadyFavorite) add(restaurant.id) else remove(restaurant.id)
+                    }
+                    android.util.Log.e("HomeViewModel", "toggleFavorite failed: ${e::class.simpleName} - ${e.message}", e)
+                    _uiState.update { it.copy(favoriteIds = revertedIds, errorMessage = "Favori: ${e.message}") }
                 }
         }
     }
@@ -376,8 +382,24 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
         return list.filter { r ->
             val passesOpen = if (RestaurantFilter.OPEN_NOW in filters) r.isOpen else true
-            val passesRating4 = if (RestaurantFilter.RATING_4_PLUS in filters) r.rating >= 4.0 else true
-            val passesRating45 = if (RestaurantFilter.RATING_45_PLUS in filters) r.rating >= 4.5 else true
+            val ratingFilters = filters.filter {
+                it == RestaurantFilter.RATING_3_PLUS || it == RestaurantFilter.RATING_35_PLUS ||
+                it == RestaurantFilter.RATING_4_PLUS || it == RestaurantFilter.RATING_45_PLUS
+            }
+            val passesRating = if (ratingFilters.isEmpty()) true else {
+                val minRating = ratingFilters.maxOf { f -> when (f) {
+                    RestaurantFilter.RATING_3_PLUS -> 3.0
+                    RestaurantFilter.RATING_35_PLUS -> 3.5
+                    RestaurantFilter.RATING_4_PLUS -> 4.0
+                    RestaurantFilter.RATING_45_PLUS -> 4.5
+                    else -> 0.0
+                }}
+                r.rating >= minRating
+            }
+            @Suppress("UNUSED_VARIABLE")
+            val passesRating4 = true
+            @Suppress("UNUSED_VARIABLE")
+            val passesRating45 = true
             val passesPrice = if (priceFilters.isNotEmpty()) {
                 priceFilters.any { f ->
                     when (f) {
@@ -391,7 +413,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val passesDistance = if (maxDistanceKm != null) {
                 haversineKm(refLat, refLng, r.latitude, r.longitude) <= maxDistanceKm
             } else true
-            passesOpen && passesRating4 && passesRating45 && passesPrice && passesDistance
+            passesOpen && passesRating && passesPrice && passesDistance
         }
     }
 
@@ -411,6 +433,56 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             lastSearchLng = lng
             loadNearbyRestaurants(lat, lng)
         }
+    }
+
+    fun openRestaurantForReview(restaurantId: String) {
+        openRestaurantById(restaurantId)
+        _uiState.update { it.copy(pendingReview = true) }
+    }
+
+    fun consumePendingReview() {
+        _uiState.update { it.copy(pendingReview = false) }
+    }
+
+    fun openRestaurantById(restaurantId: String) {
+        // Cherche d'abord dans la liste déjà chargée
+        val cached = _uiState.value.restaurants.find { it.id == restaurantId }
+        if (cached != null) {
+            _uiState.update {
+                it.copy(
+                    selectedRestaurantId = restaurantId,
+                    detailRestaurant = cached,
+                    detailReviews = emptyList(),
+                    detailGoogleReviews = emptyList()
+                )
+            }
+            loadReviews(restaurantId)
+            return
+        }
+        // Sinon fetch depuis Places API
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val restaurant = placesRepository.fetchPlaceById(restaurantId)
+            if (restaurant != null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        selectedRestaurantId = restaurantId,
+                        detailRestaurant = restaurant,
+                        detailReviews = emptyList(),
+                        detailGoogleReviews = emptyList()
+                    )
+                }
+                loadReviews(restaurantId)
+            } else {
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    fun onRemoveFavoriteFromList(restaurantId: String) {
+        val current = _uiState.value.favoriteIds.toMutableSet().apply { remove(restaurantId) }
+        _uiState.update { it.copy(favoriteIds = current) }
     }
 
     fun clearError() {

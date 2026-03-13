@@ -154,16 +154,18 @@ fun FilterBottomSheet(
                 bgColor = Color(0xFFFFF8E1)
             ) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PepChip(
-                        label = "★★★★  4+",
-                        selected = RestaurantFilter.RATING_4_PLUS in activeFilters,
-                        onClick = { onToggleFilter(RestaurantFilter.RATING_4_PLUS) }
-                    )
-                    PepChip(
-                        label = "★★★★½  4.5+",
-                        selected = RestaurantFilter.RATING_45_PLUS in activeFilters,
-                        onClick = { onToggleFilter(RestaurantFilter.RATING_45_PLUS) }
-                    )
+                    listOf(
+                        RestaurantFilter.RATING_3_PLUS  to 3,
+                        RestaurantFilter.RATING_35_PLUS to 4,
+                        RestaurantFilter.RATING_4_PLUS  to 4,
+                        RestaurantFilter.RATING_45_PLUS to 5
+                    ).forEach { (filter, starCount) ->
+                        RatingChip(
+                            starCount = starCount,
+                            selected = filter in activeFilters,
+                            onClick = { onToggleFilter(filter) }
+                        )
+                    }
                 }
             }
 
@@ -178,17 +180,17 @@ fun FilterBottomSheet(
             ) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     PepChip(
-                        label = "€  Économique",
+                        label = "€",
                         selected = RestaurantFilter.PRICE_1 in activeFilters,
                         onClick = { onToggleFilter(RestaurantFilter.PRICE_1) }
                     )
                     PepChip(
-                        label = "€€  Modéré",
+                        label = "€€",
                         selected = RestaurantFilter.PRICE_2 in activeFilters,
                         onClick = { onToggleFilter(RestaurantFilter.PRICE_2) }
                     )
                     PepChip(
-                        label = "€€€  Haut de gamme",
+                        label = "€€€",
                         selected = RestaurantFilter.PRICE_3 in activeFilters,
                         onClick = { onToggleFilter(RestaurantFilter.PRICE_3) }
                     )
@@ -266,7 +268,7 @@ fun FilterBottomSheet(
                     .height(52.dp)
                     .padding(horizontal = 20.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Text(
                     text = if (totalActive == 0) "Fermer"
@@ -317,43 +319,71 @@ private fun FilterSection(
 private fun PepChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val bgColor by animateColorAsState(
         targetValue = if (selected) AppColors.OrangeAccent else Color.White,
-        animationSpec = tween(180),
-        label = "chipBg"
+        animationSpec = tween(180), label = "chipBg"
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) Color.White else Color.DarkGray,
-        animationSpec = tween(180),
-        label = "chipText"
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (selected) AppColors.OrangeAccent else AppColors.MediumGray,
-        animationSpec = tween(180),
-        label = "chipBorder"
+        targetValue = if (selected) Color.White else AppColors.OrangeAccent,
+        animationSpec = tween(180), label = "chipText"
     )
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = RoundedCornerShape(10.dp),
         color = bgColor,
-        border = BorderStroke(1.5.dp, borderColor),
-        shadowElevation = if (selected) 6.dp else 1.dp
+        border = BorderStroke(1.dp, AppColors.OrangeAccent),
+        shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = label,
-                color = textColor,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                fontSize = 14.sp
-            )
             if (selected) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
                     tint = Color.White,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+            Text(
+                text = label,
+                color = textColor,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun RatingChip(starCount: Int, selected: Boolean, onClick: () -> Unit) {
+    val bgColor by animateColorAsState(
+        targetValue = if (selected) AppColors.OrangeAccent else Color.White,
+        animationSpec = tween(180), label = "ratingBg"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) Color.White else AppColors.OrangeAccent,
+        animationSpec = tween(180), label = "ratingContent"
+    )
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, AppColors.OrangeAccent),
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(starCount) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = contentColor,
                     modifier = Modifier.size(14.dp)
                 )
             }
