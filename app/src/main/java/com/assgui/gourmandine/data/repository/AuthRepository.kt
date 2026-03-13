@@ -68,6 +68,7 @@ class AuthRepository {
                 AuthResult.Success(it)
             } ?: AuthResult.Error("Erreur de connexion Google")
         } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Google Sign-In failed: ${e::class.simpleName} - ${e.message}", e)
             AuthResult.Error(e.message ?: "Erreur de connexion Google")
         }
     }

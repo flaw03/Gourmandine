@@ -49,13 +49,60 @@ class AuthViewModel(
                                 userNom = it.nom,
                                 userPrenom = it.prenom,
                                 userEmail = it.email,
-                                userPhone = it.phone.ifBlank { null }
+                                userPhone = it.phone.ifBlank { null },
+                                preferredCuisines = it.preferredCuisines.toSet(),
+                                preferredBudgets = it.preferredBudgets.toSet(),
+                                preferredCity = it.preferredCity
                             )
                         }
                     }
                 }
         }
     }
+
+    // ─── Préférences ─────────────────────────────────────────────────────────
+
+    fun onCuisineToggle(cuisine: String) {
+        val current = _uiState.value.preferredCuisines
+        val updated = if (cuisine in current) current - cuisine else current + cuisine
+        _uiState.update { it.copy(preferredCuisines = updated) }
+        savePreferences()
+    }
+
+    fun onBudgetToggle(budget: String) {
+        val current = _uiState.value.preferredBudgets
+        val updated = if (budget in current) current - budget else current + budget
+        _uiState.update { it.copy(preferredBudgets = updated) }
+        savePreferences()
+    }
+
+    fun onPreferredCityChange(city: String) {
+        _uiState.update { it.copy(preferredCity = city) }
+    }
+
+    fun onPreferredCitySave() {
+        savePreferences()
+    }
+
+    private fun savePreferences() {
+        val uid = authRepository.currentUser?.uid ?: return
+        val state = _uiState.value
+        viewModelScope.launch {
+            val user = User(
+                uid = uid,
+                nom = state.userNom ?: "",
+                prenom = state.userPrenom ?: "",
+                email = state.userEmail ?: "",
+                phone = state.userPhone ?: "",
+                preferredCuisines = state.preferredCuisines.toList(),
+                preferredBudgets = state.preferredBudgets.toList(),
+                preferredCity = state.preferredCity
+            )
+            userRepository.updateUser(user)
+        }
+    }
+
+    // ─── Édition profil ───────────────────────────────────────────────────────
 
     fun openEditProfile() {
         val state = _uiState.value
@@ -108,7 +155,10 @@ class AuthViewModel(
                 nom = state.editNom.trim(),
                 prenom = state.editPrenom.trim(),
                 email = state.userEmail ?: "",
-                phone = state.editPhone.trim()
+                phone = state.editPhone.trim(),
+                preferredCuisines = state.preferredCuisines.toList(),
+                preferredBudgets = state.preferredBudgets.toList(),
+                preferredCity = state.preferredCity
             )
             userRepository.updateUser(user)
                 .onSuccess {
@@ -131,54 +181,26 @@ class AuthViewModel(
         }
     }
 
+    // ─── Authentification ─────────────────────────────────────────────────────
+
     fun onNomChange(nom: String) {
-        _uiState.update {
-            it.copy(
-                nom = nom,
-                nomError = null,
-                errorMessage = null
-            )
-        }
+        _uiState.update { it.copy(nom = nom, nomError = null, errorMessage = null) }
     }
 
     fun onPrenomChange(prenom: String) {
-        _uiState.update {
-            it.copy(
-                prenom = prenom,
-                prenomError = null,
-                errorMessage = null
-            )
-        }
+        _uiState.update { it.copy(prenom = prenom, prenomError = null, errorMessage = null) }
     }
 
     fun onEmailChange(email: String) {
-        _uiState.update {
-            it.copy(
-                email = email,
-                emailError = null,
-                errorMessage = null
-            )
-        }
+        _uiState.update { it.copy(email = email, emailError = null, errorMessage = null) }
     }
 
     fun onPasswordChange(password: String) {
-        _uiState.update {
-            it.copy(
-                password = password,
-                passwordError = null,
-                errorMessage = null
-            )
-        }
+        _uiState.update { it.copy(password = password, passwordError = null, errorMessage = null) }
     }
 
     fun onConfirmPasswordChange(confirmPassword: String) {
-        _uiState.update {
-            it.copy(
-                confirmPassword = confirmPassword,
-                confirmPasswordError = null,
-                errorMessage = null
-            )
-        }
+        _uiState.update { it.copy(confirmPassword = confirmPassword, confirmPasswordError = null, errorMessage = null) }
     }
 
     fun login() {
@@ -187,12 +209,7 @@ class AuthViewModel(
         val passwordError = Validators.getPasswordError(state.password)
 
         if (emailError != null || passwordError != null) {
-            _uiState.update {
-                it.copy(
-                    emailError = emailError,
-                    passwordError = passwordError
-                )
-            }
+            _uiState.update { it.copy(emailError = emailError, passwordError = passwordError) }
             return
         }
 
@@ -201,9 +218,7 @@ class AuthViewModel(
         viewModelScope.launch {
             when (val result = authRepository.login(state.email, state.password)) {
                 is AuthResult.Success -> {
-                    // Charger le profil depuis Firestore
                     loadUserProfile(result.user.uid)
-
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -215,12 +230,7 @@ class AuthViewModel(
                     }
                 }
                 is AuthResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
             }
         }
@@ -253,14 +263,12 @@ class AuthViewModel(
         viewModelScope.launch {
             when (val result = authRepository.register(state.email, state.password)) {
                 is AuthResult.Success -> {
-                    // Créer le profil dans Firestore
                     val user = User(
                         uid = result.user.uid,
                         nom = state.nom,
                         prenom = state.prenom,
                         email = state.email
                     )
-
                     userRepository.createUser(user)
                         .onSuccess {
                             _uiState.update {
@@ -280,20 +288,12 @@ class AuthViewModel(
                         }
                         .onFailure { e ->
                             _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = "Compte créé mais erreur profil: ${e.message}"
-                                )
+                                it.copy(isLoading = false, errorMessage = "Compte créé mais erreur profil: ${e.message}")
                             }
                         }
                 }
                 is AuthResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
             }
         }
@@ -306,7 +306,6 @@ class AuthViewModel(
             when (val result = authRepository.signInWithGoogle(context)) {
                 is AuthResult.Success -> {
                     val firebaseUser = result.user
-                    // Créer le profil Firestore si nouveau
                     val existingUser = userRepository.getUser(firebaseUser.uid).getOrNull()
                     if (existingUser == null) {
                         val displayName = firebaseUser.displayName ?: ""
@@ -319,24 +318,13 @@ class AuthViewModel(
                         )
                         userRepository.createUser(user)
                     }
-
                     loadUserProfile(firebaseUser.uid)
-
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoggedIn = true,
-                            userEmail = firebaseUser.email
-                        )
+                        it.copy(isLoading = false, isLoggedIn = true, userEmail = firebaseUser.email)
                     }
                 }
                 is AuthResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
                 }
             }
         }
@@ -344,25 +332,15 @@ class AuthViewModel(
 
     fun logout() {
         authRepository.logout()
-        _uiState.update {
-            AuthUiState()
-        }
+        _uiState.update { AuthUiState() }
     }
 
     fun clearForm() {
         _uiState.update {
             it.copy(
-                nom = "",
-                prenom = "",
-                email = "",
-                password = "",
-                confirmPassword = "",
-                nomError = null,
-                prenomError = null,
-                emailError = null,
-                passwordError = null,
-                confirmPasswordError = null,
-                errorMessage = null
+                nom = "", prenom = "", email = "", password = "", confirmPassword = "",
+                nomError = null, prenomError = null, emailError = null,
+                passwordError = null, confirmPasswordError = null, errorMessage = null
             )
         }
     }

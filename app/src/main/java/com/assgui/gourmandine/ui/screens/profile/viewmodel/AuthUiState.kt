@@ -26,6 +26,11 @@ data class AuthUiState(
     val userPrenom: String? = null,
     val userPhone: String? = null,
 
+    // Préférences utilisateur
+    val preferredCuisines: Set<String> = emptySet(),
+    val preferredBudgets: Set<String> = emptySet(),
+    val preferredCity: String = "",
+
     // Édition profil
     val isEditingProfile: Boolean = false,
     val editNom: String = "",
