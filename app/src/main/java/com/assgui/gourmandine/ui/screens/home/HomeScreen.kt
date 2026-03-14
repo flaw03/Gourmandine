@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.offset
@@ -25,8 +24,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,6 +53,7 @@ import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.navigation.AppRoutes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import com.assgui.gourmandine.ui.components.NavBottomSheet
 import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.components.RestaurantDetailSheet
 import com.assgui.gourmandine.ui.screens.addreview.AddReviewScreen
@@ -110,7 +108,6 @@ fun HomeScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     // Onglet actif → icône surlignée dans le header + ModalBottomSheet ouvert
     var activeTab by remember { mutableStateOf(NavTab.HOME) }
-    val topInsets = WindowInsets.statusBars.add(WindowInsets(top = 72.dp))
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(uiState.cameraPosition, uiState.cameraZoom)
@@ -359,38 +356,21 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // ── ModalBottomSheet : Profil ───────────────────────────────────────
+        // ── NavBottomSheet : Profil ─────────────────────────────────────────
         if (activeTab == NavTab.PROFILE) {
-            ModalBottomSheet(
-                onDismissRequest = { activeTab = NavTab.HOME },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                contentWindowInsets = { topInsets },
-                containerColor = AppColors.SurfaceSheet,
-                shape = AppShapes.Sheet,
-                tonalElevation = 0.dp,
-                scrimColor = Color.Transparent,
-                dragHandle = { SheetDragHandleBar() }
-            ) {
+            NavBottomSheet(onDismiss = { activeTab = NavTab.HOME }) {
                 ProfileScreen(
                     isSheet = true,
-                    onBack = { activeTab = NavTab.HOME },
-                    onLoginSuccess = { activeTab = NavTab.HOME }
+                    onBack = { activeTab = NavTab.HOME }
+                    // onLoginSuccess intentionnellement absent : évite la fermeture
+                    // automatique si l'utilisateur est déjà connecté
                 )
             }
         }
 
-        // ── ModalBottomSheet : Favoris ──────────────────────────────────────
+        // ── NavBottomSheet : Favoris ────────────────────────────────────────
         if (activeTab == NavTab.FAVORITES) {
-            ModalBottomSheet(
-                onDismissRequest = { activeTab = NavTab.HOME },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                contentWindowInsets = { topInsets },
-                containerColor = AppColors.SurfaceSheet,
-                shape = AppShapes.Sheet,
-                tonalElevation = 0.dp,
-                scrimColor = Color.Transparent,
-                dragHandle = { SheetDragHandleBar() }
-            ) {
+            NavBottomSheet(onDismiss = { activeTab = NavTab.HOME }) {
                 FavoritesScreen(
                     isSheet = true,
                     onBack = { activeTab = NavTab.HOME },
@@ -402,18 +382,9 @@ fun HomeScreen(
             }
         }
 
-        // ── ModalBottomSheet : Réservations ─────────────────────────────────
+        // ── NavBottomSheet : Réservations ───────────────────────────────────
         if (activeTab == NavTab.RESERVATIONS) {
-            ModalBottomSheet(
-                onDismissRequest = { activeTab = NavTab.HOME },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                contentWindowInsets = { topInsets },
-                containerColor = AppColors.SurfaceSheet,
-                shape = AppShapes.Sheet,
-                tonalElevation = 0.dp,
-                scrimColor = Color.Transparent,
-                dragHandle = { SheetDragHandleBar() }
-            ) {
+            NavBottomSheet(onDismiss = { activeTab = NavTab.HOME }) {
                 ReservationScreen(
                     isSheet = true,
                     onBack = { activeTab = NavTab.HOME }
