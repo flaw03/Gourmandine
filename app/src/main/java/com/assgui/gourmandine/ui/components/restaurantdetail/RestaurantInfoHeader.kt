@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 
 @Composable
 fun RestaurantInfoHeader(
@@ -63,7 +64,7 @@ fun RestaurantInfoHeader(
             text = restaurant.name,
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp,
-            color = Color.Black,
+            color = AppColors.TextPrimary,
             modifier = Modifier.weight(1f)
         )
         ActionButtons(
@@ -81,12 +82,12 @@ fun RestaurantInfoHeader(
 
 @Composable
 private fun StatusBadge(isOpen: Boolean) {
-    val statusText = if (isOpen) "Open" else "Closed"
+    val statusText = if (isOpen) "Ouvert" else "Fermé"
     val statusColor = if (isOpen) AppColors.Green else AppColors.Red
 
     Box(
         modifier = Modifier
-            .background(statusColor, RoundedCornerShape(6.dp))
+            .background(statusColor, AppShapes.Pill)
             .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {
         Text(
@@ -188,11 +189,11 @@ private fun RatingRow(rating: Double, reviewCount: Int) {
             text = "$rating",
             fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp,
-            color = Color.DarkGray
+            color = AppColors.TextSecondary
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = "($reviewCount Reviews)",
+            text = "($reviewCount avis)",
             fontSize = 14.sp,
             color = AppColors.OrangeAccent
         )

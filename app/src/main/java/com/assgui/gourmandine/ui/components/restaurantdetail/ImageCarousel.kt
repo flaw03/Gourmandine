@@ -1,7 +1,6 @@
 package com.assgui.gourmandine.ui.components.restaurantdetail
 
 import androidx.compose.foundation.background
-import com.assgui.gourmandine.ui.theme.AppColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -23,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.assgui.gourmandine.ui.theme.AppColors
 
 @Composable
 fun ImageCarousel(
@@ -55,7 +55,7 @@ fun ImageCarousel(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     repeat(imageUrls.size) { index ->
                         Box(
@@ -78,7 +78,7 @@ fun ImageCarousel(
                     .background(AppColors.MediumGray),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No image", color = Color.Gray)
+                Text("Aucune image", color = Color.Gray)
             }
         }
     }

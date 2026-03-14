@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,9 +23,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,39 +58,7 @@ fun RestaurantDetailSheet(
 ) {
     if (!visible || restaurant == null) return
 
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true   // ouvre directement en plein écran
-    )
-
-    // Gap en haut = statusBar + 72dp → laisse le header avec les icônes visible
-    val topInsets = WindowInsets.statusBars.add(WindowInsets(top = 72.dp))
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        windowInsets = topInsets,
-        containerColor = AppColors.SurfaceSheet,
-        shape = AppShapes.Sheet,
-        tonalElevation = 0.dp,
-        scrimColor = Color.Transparent,
-        dragHandle = {
-            // Drag handle dans le style de l'app
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp, bottom = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(40.dp)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(AppColors.OrangeLight)
-                )
-            }
-        }
-    ) {
+    NavBottomSheet(onDismiss = onDismiss) {
         RestaurantDetailContent(
             restaurant = restaurant,
             reviews = reviews,
