@@ -34,6 +34,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import android.util.Log
 import kotlinx.coroutines.launch
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 
 private const val TAG = "HomeViewModel"
 
@@ -65,6 +68,15 @@ class HomeViewModel(
     private val reviewRepository: ReviewRepository = ServiceLocator.reviewRepository,
     private val favoritesRepository: FavoritesRepository = ServiceLocator.favoritesRepository
 ) : AndroidViewModel(application) {
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]!!
+                HomeViewModel(app)
+            }
+        }
+    }
     private val connectivityManager = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     private val _uiState = MutableStateFlow(HomeUiState())
