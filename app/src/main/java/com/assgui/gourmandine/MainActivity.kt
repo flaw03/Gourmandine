@@ -130,150 +130,176 @@ fun GourmandineApp() {
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 0.dp
-            ) {
-                navItems.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        selected = selectedTab == index,
-                        onClick = {
-                            if (item.requiresAuth && !isLoggedIn) {
-                                pendingLoginAction = { selectedTab = index }
-                                showLoginSheet = true
-                            } else {
-                                selectedTab = index
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.label
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                NavigationBar(
+                    containerColor = Color.White,
+                    tonalElevation = 0.dp
+                ) {
+                    navItems.forEachIndexed { index, item ->
+                        NavigationBarItem(
+                            selected = selectedTab == index,
+                            onClick = {
+                                if (item.requiresAuth && !isLoggedIn) {
+                                    pendingLoginAction = { selectedTab = index }
+                                    showLoginSheet = true
+                                } else {
+                                    selectedTab = index
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = item.label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AppColors.OrangeAccent,
+                                selectedTextColor = AppColors.OrangeAccent,
+                                indicatorColor = AppColors.OrangeLight,
+                                unselectedIconColor = AppColors.TextTertiary,
+                                unselectedTextColor = AppColors.TextTertiary
                             )
-                        },
-                        label = {
-                            Text(
-                                text = item.label,
-                                fontSize = 11.sp,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = AppColors.OrangeAccent,
-                            selectedTextColor = AppColors.OrangeAccent,
-                            indicatorColor = AppColors.OrangeLight,
-                            unselectedIconColor = AppColors.TextTertiary,
-                            unselectedTextColor = AppColors.TextTertiary
                         )
-                    )
+                    }
                 }
             }
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            Crossfade(targetState = selectedTab, animationSpec = tween(200), label = "tab") { tab ->
-                when (tab) {
-                    0 -> HomeScreen(viewModel = homeViewModel)
-                    1 -> FavoritesScreen(
-                        onRestaurantClick = { restaurantId ->
-                            homeViewModel.openRestaurantById(restaurantId)
-                        },
-                        onFavoriteRemoved = { restaurantId ->
-                            homeViewModel.onRemoveFavoriteFromList(restaurantId)
-                        }
-                    )
-                    2 -> ReservationScreen(
-                        viewModel = reservationViewModel,
-                        onViewOnMap = { restaurantId ->
-                            homeViewModel.openRestaurantById(restaurantId)
-                        },
-                        onAddReview = { restaurantId ->
-                            homeViewModel.openRestaurantForReview(restaurantId)
-                        }
-                    )
-                    3 -> ProfileScreen(
-                        onNavigateToFavorites = {
-                            if (isLoggedIn) selectedTab = 1
-                        },
-                        onNavigateToReservations = {
-                            if (isLoggedIn) selectedTab = 2
-                        }
-                    )
-                }
-            }
-        }
-
-        // ── Restaurant Detail ModalBottomSheet ────────────────────────────
-        RestaurantDetailSheet(
-            restaurant = homeUiState.detailRestaurant,
-            visible = homeUiState.detailRestaurant != null,
-            reviews = homeUiState.detailReviews,
-            googleReviews = homeUiState.detailGoogleReviews,
-            isFavorite = homeUiState.detailRestaurant?.id?.let { it in homeUiState.favoriteIds } ?: false,
-            onDismiss = homeViewModel::onDismissDetail,
-            onAddReview = { restaurant ->
-                if (isLoggedIn) {
-                    reviewRestaurant = restaurant
-                } else {
-                    pendingLoginAction = { reviewRestaurant = restaurant }
-                    showLoginSheet = true
-                }
-            },
-            onReserve = { restaurant ->
-                if (isLoggedIn) {
-                    restaurantToBook = restaurant
-                } else {
-                    pendingLoginAction = { restaurantToBook = restaurant }
-                    showLoginSheet = true
-                }
-            },
-            onToggleFavorite = { restaurant ->
-                if (isLoggedIn) {
-                    homeViewModel.onToggleFavorite(restaurant)
-                } else {
-                    pendingLoginAction = { homeViewModel.onToggleFavorite(restaurant) }
-                    showLoginSheet = true
-                }
-            }
-        )
-
-        // ── Login ModalBottomSheet ────────────────────────────────────────
-        if (showLoginSheet) {
-            val loginSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ModalBottomSheet(
-                onDismissRequest = {
-                    showLoginSheet = false
-                    pendingLoginAction = null
-                },
-                sheetState = loginSheetState,
-                containerColor = AppColors.SurfaceWarm
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                ProfileScreen(
-                    isSheet = true,
-                    onLoginSuccess = {
+                Crossfade(targetState = selectedTab, animationSpec = tween(200), label = "tab") { tab ->
+                    when (tab) {
+                        0 -> HomeScreen(viewModel = homeViewModel)
+                        1 -> FavoritesScreen(
+                            onRestaurantClick = { restaurantId ->
+                                homeViewModel.openRestaurantById(restaurantId)
+                            },
+                            onFavoriteRemoved = { restaurantId ->
+                                homeViewModel.onRemoveFavoriteFromList(restaurantId)
+                            }
+                        )
+                        2 -> ReservationScreen(
+                            viewModel = reservationViewModel,
+                            onViewOnMap = { restaurantId ->
+                                homeViewModel.openRestaurantById(restaurantId)
+                            },
+                            onAddReview = { restaurantId ->
+                                homeViewModel.openRestaurantForReview(restaurantId)
+                            }
+                        )
+                        3 -> ProfileScreen(
+                            onNavigateToFavorites = {
+                                if (isLoggedIn) selectedTab = 1
+                            },
+                            onNavigateToReservations = {
+                                if (isLoggedIn) selectedTab = 2
+                            }
+                        )
+                    }
+                }
+            }
+
+            // ── Restaurant Detail ModalBottomSheet ────────────────────────────
+            RestaurantDetailSheet(
+                restaurant = homeUiState.detailRestaurant,
+                visible = homeUiState.detailRestaurant != null,
+                reviews = homeUiState.detailReviews,
+                googleReviews = homeUiState.detailGoogleReviews,
+                isFavorite = homeUiState.detailRestaurant?.id?.let { it in homeUiState.favoriteIds } ?: false,
+                onDismiss = homeViewModel::onDismissDetail,
+                onAddReview = { restaurant ->
+                    if (isLoggedIn) {
+                        reviewRestaurant = restaurant
+                    } else {
+                        pendingLoginAction = { reviewRestaurant = restaurant }
+                        showLoginSheet = true
+                    }
+                },
+                onReserve = { restaurant ->
+                    if (isLoggedIn) {
+                        restaurantToBook = restaurant
+                    } else {
+                        pendingLoginAction = { restaurantToBook = restaurant }
+                        showLoginSheet = true
+                    }
+                },
+                onToggleFavorite = { restaurant ->
+                    if (isLoggedIn) {
+                        homeViewModel.onToggleFavorite(restaurant)
+                    } else {
+                        pendingLoginAction = { homeViewModel.onToggleFavorite(restaurant) }
+                        showLoginSheet = true
+                    }
+                }
+            )
+
+            // ── Login ModalBottomSheet ────────────────────────────────────────
+            if (showLoginSheet) {
+                val loginSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ModalBottomSheet(
+                    onDismissRequest = {
                         showLoginSheet = false
-                        pendingLoginAction?.invoke()
                         pendingLoginAction = null
                     },
-                    onNavigateToFavorites = {
-                        showLoginSheet = false
-                        selectedTab = 1
-                    },
-                    onNavigateToReservations = {
-                        showLoginSheet = false
+                    sheetState = loginSheetState,
+                    containerColor = AppColors.SurfaceWarm
+                ) {
+                    ProfileScreen(
+                        isSheet = true,
+                        onLoginSuccess = {
+                            showLoginSheet = false
+                            pendingLoginAction?.invoke()
+                            pendingLoginAction = null
+                        },
+                        onNavigateToFavorites = {
+                            showLoginSheet = false
+                            selectedTab = 1
+                        },
+                        onNavigateToReservations = {
+                            showLoginSheet = false
+                            selectedTab = 2
+                        }
+                    )
+                }
+            }
+
+            // ── Booking Dialog ────────────────────────────────────────────────
+            restaurantToBook?.let { restaurant ->
+                ReservationBookingDialog(
+                    restaurant = restaurant,
+                    onDismiss = { restaurantToBook = null },
+                    onConfirm = { dateMs, partySize, notes ->
+                        val imageUrl = restaurant.imageUrls.firstOrNull() ?: ""
+                        reservationViewModel.addReservation(
+                            Reservation(
+                                restaurantId = restaurant.id,
+                                restaurantName = restaurant.name,
+                                restaurantAddress = restaurant.address,
+                                restaurantImageUrl = imageUrl,
+                                dateMs = dateMs,
+                                partySize = partySize,
+                                notes = notes
+                            )
+                        )
+                        restaurantToBook = null
                         selectedTab = 2
                     }
                 )
             }
         }
 
-        // ── Overlay AddReview ─────────────────────────────────────────────
+        // ── Overlay AddReview (hors Scaffold pour éviter la consommation des insets) ──
         reviewRestaurant?.let { restaurant ->
             AddReviewScreen(
                 restaurant = restaurant,
@@ -282,30 +308,6 @@ fun GourmandineApp() {
                     homeViewModel.onMarkerDetailClick(restaurant.id)
                     reservationViewModel.loadMyReviews()
                     reviewRestaurant = null
-                }
-            )
-        }
-
-        // ── Booking Dialog ────────────────────────────────────────────────
-        restaurantToBook?.let { restaurant ->
-            ReservationBookingDialog(
-                restaurant = restaurant,
-                onDismiss = { restaurantToBook = null },
-                onConfirm = { dateMs, partySize, notes ->
-                    val imageUrl = restaurant.imageUrls.firstOrNull() ?: ""
-                    reservationViewModel.addReservation(
-                        Reservation(
-                            restaurantId = restaurant.id,
-                            restaurantName = restaurant.name,
-                            restaurantAddress = restaurant.address,
-                            restaurantImageUrl = imageUrl,
-                            dateMs = dateMs,
-                            partySize = partySize,
-                            notes = notes
-                        )
-                    )
-                    restaurantToBook = null
-                    selectedTab = 2
                 }
             )
         }
