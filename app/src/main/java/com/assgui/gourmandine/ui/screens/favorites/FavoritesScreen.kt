@@ -43,20 +43,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.assgui.gourmandine.data.model.Favorite
-import com.assgui.gourmandine.ui.components.MapHeaderOverlay
-import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.theme.AppColors
 import com.assgui.gourmandine.ui.theme.AppShapes
 
 @Composable
 fun FavoritesScreen(
-    isSheet: Boolean = false,
-    onBack: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {},
-    onNavigateToReservations: () -> Unit = {},
     onFavoriteRemoved: (String) -> Unit = {},
-    onViewOnMap: (String) -> Unit = {},
+    onRestaurantClick: (String) -> Unit = {},
     viewModel: FavoritesViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -66,17 +59,6 @@ fun FavoritesScreen(
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        if (!isSheet) {
-            MapHeaderOverlay(
-                currentTab = NavTab.FAVORITES,
-                onNavigateToHome = onNavigateToHome,
-                onNavigateToProfile = onNavigateToProfile,
-                onNavigateToFavorites = {},
-                onNavigateToReservations = onNavigateToReservations,
-                isLoggedIn = true
-            )
-        }
-
         Box(modifier = Modifier.weight(1f)) {
             when {
                 uiState.isLoading -> {
@@ -97,14 +79,13 @@ fun FavoritesScreen(
                                     viewModel.removeFavorite(favorite.restaurantId)
                                     onFavoriteRemoved(favorite.restaurantId)
                                 },
-                                onViewOnMap = { onViewOnMap(favorite.restaurantId) }
+                                onClick = { onRestaurantClick(favorite.restaurantId) }
                             )
                         }
                     }
                 }
             }
         }
-
     }
 }
 
@@ -112,12 +93,12 @@ fun FavoritesScreen(
 private fun FavoriteCard(
     favorite: Favorite,
     onRemove: () -> Unit,
-    onViewOnMap: () -> Unit = {}
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onViewOnMap),
+            .clickable(onClick = onClick),
         shape = AppShapes.Large,
         colors = CardDefaults.cardColors(containerColor = AppColors.SurfaceCard),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
@@ -128,7 +109,6 @@ private fun FavoriteCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Image
             AsyncImage(
                 model = favorite.restaurantImageUrl.ifBlank { null },
                 contentDescription = favorite.restaurantName,
@@ -141,7 +121,6 @@ private fun FavoriteCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Info
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -155,7 +134,6 @@ private fun FavoriteCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                // Rating
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -174,7 +152,6 @@ private fun FavoriteCard(
                     )
                 }
 
-                // Address
                 if (favorite.restaurantAddress.isNotBlank()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -197,7 +174,6 @@ private fun FavoriteCard(
                 }
             }
 
-            // Unfavorite button
             IconButton(onClick = onRemove) {
                 Icon(
                     imageVector = Icons.Default.Favorite,

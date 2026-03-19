@@ -46,8 +46,6 @@ import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.clustering.Clustering
-import com.assgui.gourmandine.ui.components.MapHeaderOverlay
-import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.theme.AppColors
 
 
@@ -70,11 +68,6 @@ fun RestaurantMapSection(
     onMarkerClick: (String) -> Unit,
     onMarkerDetailClick: (String) -> Unit,
     onClusterClick: (LatLngBounds) -> Unit,
-    onProfileClick: () -> Unit,
-    onReservationClick: () -> Unit,
-    onFavoritesClick: () -> Unit = {},
-    activeTab: NavTab = NavTab.HOME,
-    isLoggedIn: Boolean = false,
     onCameraIdle: (Double, Double) -> Unit = { _, _ -> },
     onMyLocationClick: () -> Unit = {},
     userLocation: LatLng? = null,
@@ -157,16 +150,6 @@ fun RestaurantMapSection(
                 }
             }
         }
-
-        MapHeaderOverlay(
-            currentTab = activeTab,
-            onNavigateToHome = {},
-            onNavigateToProfile = onProfileClick,
-            onNavigateToFavorites = onFavoritesClick,
-            onNavigateToReservations = onReservationClick,
-            isLoggedIn = isLoggedIn,
-            modifier = Modifier.align(Alignment.TopStart)
-        )
 
         if (isLocationButtonVisible) {
             MapLocationButton(
@@ -271,14 +254,14 @@ private fun SelectedMarker(
             ) {
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color.White, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White, RoundedCornerShape(14.dp))
                         .clickable { onMoreDetails() }
-                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                        .padding(horizontal = 14.dp, vertical = 5.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "More details",
+                        text = "Plus de détails",
                         color = AppColors.OrangeAccent,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp

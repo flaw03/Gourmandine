@@ -1,5 +1,6 @@
 package com.assgui.gourmandine.ui.screens.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -58,8 +60,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.assgui.gourmandine.ui.components.MapHeaderOverlay
-import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthUiState
 import com.assgui.gourmandine.ui.screens.profile.viewmodel.AuthViewModel
 import com.assgui.gourmandine.ui.theme.AppColors
@@ -123,7 +123,8 @@ fun ProfileScreen(
                     viewModel.clearForm()
                     currentScreen = AuthScreen.REGISTER
                 },
-                onBack = onBack
+                onBack = onBack,
+                isSheet = isSheet
             )
             AuthScreen.REGISTER -> RegisterScreen(
                 uiState = uiState,
@@ -138,7 +139,8 @@ fun ProfileScreen(
                     viewModel.clearForm()
                     currentScreen = AuthScreen.LOGIN
                 },
-                onBack = onBack
+                onBack = onBack,
+                isSheet = isSheet
             )
         }
     }
@@ -172,17 +174,6 @@ private fun ProfileContent(
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        if (!isSheet) {
-            MapHeaderOverlay(
-                currentTab = NavTab.PROFILE,
-                onNavigateToHome = onNavigateToHome,
-                onNavigateToProfile = {},
-                onNavigateToFavorites = onNavigateToFavorites,
-                onNavigateToReservations = onNavigateToReservations,
-                isLoggedIn = true
-            )
-        }
-
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -307,8 +298,8 @@ private fun ProfileContent(
                 onClick = onLogout,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = AppShapes.Large,
+                    .height(50.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AppColors.OrangeAccent
                 )
@@ -437,9 +428,12 @@ private fun EditProfileSheet(
             enabled = !uiState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
-            shape = AppShapes.Large,
-            colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent)
+                .height(50.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AppColors.OrangeAccent,
+                disabledContainerColor = AppColors.OrangeAccent.copy(alpha = 0.5f)
+            )
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
@@ -452,14 +446,14 @@ private fun EditProfileSheet(
             onClick = onCancel,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
-            shape = AppShapes.Large,
+                .height(50.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = AppColors.SurfaceCard,
                 contentColor = AppColors.TextSecondary
             )
         ) {
-            Text("Annuler", fontWeight = FontWeight.Medium, fontSize = 15.sp)
+            Text("Annuler", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
         }
     }
 }
@@ -521,13 +515,21 @@ private fun PreferencesSection(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             cuisines.forEach { cuisine ->
+                val selected = cuisine in selectedCuisines
                 FilterChip(
-                    selected = cuisine in selectedCuisines,
+                    selected = selected,
                     onClick = { onCuisineToggle(cuisine) },
-                    label = { Text(cuisine, fontSize = 12.sp) },
+                    label = { Text(cuisine, fontSize = 12.sp, fontWeight = FontWeight.Medium) },
+                    shape = AppShapes.Pill,
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AppColors.OrangeLight,
-                        selectedLabelColor = AppColors.OrangeAccent
+                        selectedContainerColor = AppColors.OrangeAccent,
+                        selectedLabelColor = Color.White,
+                        containerColor = AppColors.BackgroundGray,
+                        labelColor = Color.Gray
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (selected) AppColors.OrangeAccent else AppColors.MediumGray
                     )
                 )
             }
@@ -541,13 +543,21 @@ private fun PreferencesSection(
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             budgets.forEach { budget ->
+                val selected = budget in selectedBudgets
                 FilterChip(
-                    selected = budget in selectedBudgets,
+                    selected = selected,
                     onClick = { onBudgetToggle(budget) },
                     label = { Text(budget, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
+                    shape = AppShapes.Pill,
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AppColors.OrangeLight,
-                        selectedLabelColor = AppColors.OrangeAccent
+                        selectedContainerColor = AppColors.OrangeAccent,
+                        selectedLabelColor = Color.White,
+                        containerColor = AppColors.BackgroundGray,
+                        labelColor = Color.Gray
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (selected) AppColors.OrangeAccent else AppColors.MediumGray
                     )
                 )
             }

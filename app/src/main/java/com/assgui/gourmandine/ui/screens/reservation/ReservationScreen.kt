@@ -60,12 +60,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.assgui.gourmandine.data.model.Review
-import com.assgui.gourmandine.navigation.AppRoutes
-import com.assgui.gourmandine.ui.components.MapHeaderOverlay
-import com.assgui.gourmandine.ui.components.NavTab
 import com.assgui.gourmandine.ui.screens.reservation.components.ReservationCard
 import com.assgui.gourmandine.ui.theme.AppColors
 import com.assgui.gourmandine.ui.theme.AppShapes
@@ -77,9 +73,6 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationScreen(
-    isSheet: Boolean = false,
-    onBack: () -> Unit = {},
-    navController: NavController? = null,
     onViewOnMap: (String) -> Unit = {},
     onAddReview: (String) -> Unit = {},
     viewModel: ReservationViewModel = viewModel()
@@ -122,17 +115,6 @@ fun ReservationScreen(
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        if (!isSheet) {
-            MapHeaderOverlay(
-                currentTab = NavTab.RESERVATIONS,
-                onNavigateToHome = { navController?.popBackStack(AppRoutes.HOME, false) ?: onBack() },
-                onNavigateToProfile = { navController?.navigate(AppRoutes.PROFILE) },
-                onNavigateToFavorites = { navController?.navigate(AppRoutes.FAVORITES) },
-                onNavigateToReservations = {},
-                isLoggedIn = true
-            )
-        }
-
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = AppColors.SurfaceWarm,
@@ -282,7 +264,6 @@ private fun MyReviewCard(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
 
-                // En-tête : nom restaurant + date
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -305,7 +286,6 @@ private fun MyReviewCard(
                         )
                     }
 
-                    // Étoiles
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -321,7 +301,6 @@ private fun MyReviewCard(
                     }
                 }
 
-                // Texte de l'avis
                 if (review.text.isNotBlank()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     HorizontalDivider(color = AppColors.Divider)
@@ -343,16 +322,11 @@ private fun MyReviewCard(
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier
                                 .padding(top = 4.dp)
-                                .let { mod ->
-                                    mod.then(
-                                        Modifier.clickable { expanded = !expanded }
-                                    )
-                                }
+                                .clickable { expanded = !expanded }
                         )
                     }
                 }
 
-                // Photos
                 if (review.imageUrls.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     LazyRow(

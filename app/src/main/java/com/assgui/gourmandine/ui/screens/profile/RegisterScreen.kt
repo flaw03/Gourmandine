@@ -69,15 +69,16 @@ fun RegisterScreen(
     onRegisterClick: () -> Unit,
     onGoogleSignIn: () -> Unit = {},
     onNavigateToLogin: () -> Unit,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    isSheet: Boolean = false
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        // Header
-        Box(
+        // Header : masqué en mode sheet
+        if (!isSheet) Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(AppColors.SurfaceWarm)
@@ -181,7 +182,7 @@ fun RegisterScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = AppShapes.Large,
             colors = fieldColors,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = uiState.emailError != null,
@@ -199,7 +200,7 @@ fun RegisterScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = AppShapes.Large,
             colors = fieldColors,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
@@ -218,7 +219,7 @@ fun RegisterScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = AppShapes.Large,
             colors = fieldColors,
             visualTransformation = PasswordVisualTransformation(),
             isError = uiState.confirmPasswordError != null,

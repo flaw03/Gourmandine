@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assgui.gourmandine.data.model.Favorite
 import com.assgui.gourmandine.data.repository.FavoritesRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,8 +23,20 @@ class FavoritesViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
+    private var lastLoadedUid: String? = null
+
     init {
-        loadFavorites()
+        val auth = FirebaseAuth.getInstance()
+        auth.addAuthStateListener { firebaseAuth ->
+            val uid = firebaseAuth.currentUser?.uid
+            if (uid != null && uid != lastLoadedUid) {
+                lastLoadedUid = uid
+                loadFavorites()
+            } else if (uid == null) {
+                lastLoadedUid = null
+                _uiState.update { FavoritesUiState() }
+            }
+        }
     }
 
     fun loadFavorites() {

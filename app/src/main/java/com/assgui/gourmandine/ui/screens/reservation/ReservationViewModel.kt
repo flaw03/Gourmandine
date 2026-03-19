@@ -3,6 +3,7 @@ package com.assgui.gourmandine.ui.screens.reservation
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.assgui.gourmandine.data.model.Reservation
@@ -25,6 +26,8 @@ data class ReservationUiState(
     val error: String? = null
 )
 
+private const val TAG = "ReservationVM"
+
 class ReservationViewModel : ViewModel() {
 
     private val repository = ReservationRepository()
@@ -33,30 +36,46 @@ class ReservationViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(ReservationUiState())
     val uiState: StateFlow<ReservationUiState> = _uiState.asStateFlow()
 
+    private var lastLoadedUid: String? = null
+
     init {
-        loadReservations()
-        loadMyReviews()
+        listenAuthChanges()
+    }
+
+    private fun listenAuthChanges() {
+        val auth = FirebaseAuth.getInstance()
+        // Charge immédiatement si déjà connecté
+        auth.currentUser?.uid?.let { uid ->
+            lastLoadedUid = uid
+            loadReservations()
+            loadMyReviews()
+        }
+        auth.addAuthStateListener { firebaseAuth ->
+            val uid = firebaseAuth.currentUser?.uid
+            Log.d(TAG, "authStateChanged: uid=$uid lastLoaded=$lastLoadedUid")
+            if (uid != null && uid != lastLoadedUid) {
+                lastLoadedUid = uid
+                loadReservations()
+                loadMyReviews()
+            } else if (uid == null) {
+                lastLoadedUid = null
+                _uiState.update { ReservationUiState() }
+            }
+        }
     }
 
     fun loadMyReviews() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        _uiState.update { it.copy(isLoadingReviews = true) }
         viewModelScope.launch {
-            // 1. Affichage instantané depuis le cache Firestore
-            reviewRepository.getReviewsByUser(userId, fromCache = true)
-                .onSuccess { cached ->
-                    if (cached.isNotEmpty()) {
-                        _uiState.update { it.copy(myReviews = cached) }
-                    } else {
-                        _uiState.update { it.copy(isLoadingReviews = true) }
-                    }
-                }
-
-            // 2. Rafraîchissement depuis le serveur en arrière-plan
+            Log.d(TAG, "loadMyReviews: début pour uid=$userId")
             reviewRepository.getReviewsByUser(userId, fromCache = false)
                 .onSuccess { fresh ->
+                    Log.d(TAG, "loadMyReviews: ${fresh.size} avis chargés")
                     _uiState.update { it.copy(myReviews = fresh, isLoadingReviews = false) }
                 }
-                .onFailure {
+                .onFailure { e ->
+                    Log.e(TAG, "loadMyReviews: échec", e)
                     _uiState.update { it.copy(isLoadingReviews = false) }
                 }
         }
@@ -75,27 +94,14 @@ class ReservationViewModel : ViewModel() {
     }
 
     fun loadReservations() {
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             val now = System.currentTimeMillis()
+            Log.d(TAG, "loadReservations: début pour uid=${FirebaseAuth.getInstance().currentUser?.uid}")
 
-            // 1. Affichage instantané depuis le cache Firestore
-            repository.getReservations(fromCache = true)
-                .onSuccess { cached ->
-                    if (cached.isNotEmpty()) {
-                        _uiState.update {
-                            it.copy(
-                                upcoming = cached.filter { r -> r.dateMs >= now }.sortedBy { r -> r.dateMs },
-                                past = cached.filter { r -> r.dateMs < now }.sortedByDescending { r -> r.dateMs }
-                            )
-                        }
-                    } else {
-                        _uiState.update { it.copy(isLoading = true, error = null) }
-                    }
-                }
-
-            // 2. Rafraîchissement depuis le serveur en arrière-plan
             repository.getReservations(fromCache = false)
                 .onSuccess { list ->
+                    Log.d(TAG, "loadReservations: ${list.size} réservations chargées")
                     _uiState.update {
                         it.copy(
                             upcoming = list.filter { r -> r.dateMs >= now }.sortedBy { r -> r.dateMs },
@@ -105,6 +111,7 @@ class ReservationViewModel : ViewModel() {
                     }
                 }
                 .onFailure { e ->
+                    Log.e(TAG, "loadReservations: échec", e)
                     _uiState.update { it.copy(isLoading = false, error = e.message) }
                 }
         }

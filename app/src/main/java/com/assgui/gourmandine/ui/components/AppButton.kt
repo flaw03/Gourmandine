@@ -22,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.assgui.gourmandine.ui.theme.AppColors
-import com.assgui.gourmandine.ui.theme.AppShapes
 
 @Composable
 fun PrimaryButton(
@@ -35,9 +35,9 @@ fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
+        modifier = modifier.height(50.dp),
         enabled = enabled && !isLoading,
-        shape = AppShapes.Large,
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = AppColors.OrangeAccent,
             disabledContainerColor = AppColors.OrangeAccent.copy(alpha = 0.5f)
@@ -59,12 +59,14 @@ fun PrimaryButton(
 fun SecondaryButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
-        shape = AppShapes.Large,
+        modifier = modifier.height(50.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, AppColors.OrangeAccent),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.OrangeAccent)
     ) {
@@ -83,8 +85,8 @@ fun IconActionButton(
     Box(
         modifier = modifier
             .size(size)
-            .clip(AppShapes.Small)
-            .background(AppColors.OrangeMedium)
+            .clip(RoundedCornerShape(14.dp))
+            .background(tint.copy(alpha = 0.15f))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -105,8 +107,8 @@ fun DestructiveButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
-        shape = AppShapes.Large,
+        modifier = modifier.height(50.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = AppColors.Red.copy(alpha = 0.1f),
             contentColor = AppColors.Red

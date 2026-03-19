@@ -18,6 +18,7 @@ import com.assgui.gourmandine.data.repository.FavoritesRepository
 import com.assgui.gourmandine.data.repository.PlacesRepository
 import com.assgui.gourmandine.data.repository.PlacesResult
 import com.assgui.gourmandine.data.repository.ReviewRepository
+import com.google.firebase.auth.FirebaseAuth
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import kotlin.math.atan2
@@ -83,6 +84,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         observeNetworkConnectivity()
         loadFavorites()
+        listenAuthForFavorites()
         val initialLocation = getLastKnownLocationIfPermitted()
         if (initialLocation != null) {
             _uiState.update {
@@ -97,6 +99,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             loadNearbyRestaurants(48.8566, 2.3522)
         }
         initialLoadDone = true
+    }
+
+    private var lastFavUid: String? = null
+
+    private fun listenAuthForFavorites() {
+        FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            val uid = auth.currentUser?.uid
+            if (uid != null && uid != lastFavUid) {
+                lastFavUid = uid
+                loadFavorites()
+            } else if (uid == null) {
+                lastFavUid = null
+                _uiState.update { it.copy(favoriteIds = emptySet()) }
+            }
+        }
     }
 
     private fun getLastKnownLocationIfPermitted(): LatLng? {

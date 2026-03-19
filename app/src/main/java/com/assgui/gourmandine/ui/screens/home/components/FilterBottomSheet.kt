@@ -265,17 +265,17 @@ fun FilterBottomSheet(
                 onClick = onDismiss,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .height(50.dp)
                     .padding(horizontal = 20.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Text(
                     text = if (totalActive == 0) "Fermer"
                     else "Voir les résultats · $totalActive filtre${if (totalActive > 1) "s" else ""}",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize = 16.sp
                 )
             }
         }
@@ -328,7 +328,7 @@ private fun PepChip(label: String, selected: Boolean, onClick: () -> Unit) {
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(14.dp),
         color = bgColor,
         border = BorderStroke(1.dp, AppColors.OrangeAccent),
         shadowElevation = 0.dp
@@ -369,7 +369,7 @@ private fun RatingChip(starCount: Int, selected: Boolean, onClick: () -> Unit) {
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(14.dp),
         color = bgColor,
         border = BorderStroke(1.dp, AppColors.OrangeAccent),
         shadowElevation = 0.dp

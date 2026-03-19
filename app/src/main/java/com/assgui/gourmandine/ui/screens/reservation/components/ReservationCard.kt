@@ -1,5 +1,6 @@
 package com.assgui.gourmandine.ui.screens.reservation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.assgui.gourmandine.data.model.Reservation
 import com.assgui.gourmandine.ui.theme.AppColors
+import com.assgui.gourmandine.ui.theme.AppShapes
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -119,35 +121,42 @@ fun ReservationCard(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = onChangeDate,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, AppColors.OrangeAccent),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.OrangeAccent)
                 ) {
-                    Text("Modifier", fontSize = 12.sp, maxLines = 1)
+                    Text("Modifier", fontSize = 12.sp, maxLines = 1, fontWeight = FontWeight.SemiBold)
                 }
                 OutlinedButton(
                     onClick = onAddToCalendar,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, AppColors.OrangeAccent),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.OrangeAccent)
                 ) {
-                    Text("Calendrier", fontSize = 12.sp, maxLines = 1)
+                    Text("Calendrier", fontSize = 12.sp, maxLines = 1, fontWeight = FontWeight.SemiBold)
                 }
                 Button(
                     onClick = onDelete,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Red)
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.Red.copy(alpha = 0.1f),
+                        contentColor = AppColors.Red
+                    )
                 ) {
-                    Text("Annuler", fontSize = 12.sp, maxLines = 1)
+                    Text("Annuler", fontSize = 12.sp, maxLines = 1, fontWeight = FontWeight.SemiBold)
                 }
             }
         } else {
             Button(
                 onClick = onAddReview,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent)
             ) {
-                Text("Donner mon avis", fontWeight = FontWeight.SemiBold)
+                Text("Donner mon avis", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
         }
     }
@@ -158,15 +167,15 @@ private fun StatusChip(isPast: Boolean) {
     Box(
         modifier = Modifier
             .background(
-                if (isPast) AppColors.LightGray else AppColors.Green.copy(alpha = 0.15f),
-                RoundedCornerShape(6.dp)
+                if (isPast) AppColors.LightGray.copy(alpha = 0.3f) else AppColors.Green.copy(alpha = 0.15f),
+                AppShapes.Pill
             )
-            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {
         Text(
             text = if (isPast) "Passée" else "À venir",
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
             color = if (isPast) Color.Gray else AppColors.Green
         )
     }

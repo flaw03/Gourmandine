@@ -139,6 +139,7 @@ fun PhotoEditorScreen(
         // Canvas view
         AndroidView(
             factory = { canvasView },
+            update = { it.invalidate() },
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)

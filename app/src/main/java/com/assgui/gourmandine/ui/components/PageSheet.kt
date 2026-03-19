@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -56,13 +57,19 @@ fun PageSheet(
     val scope = rememberCoroutineScope()
     val offsetY = remember { Animatable(screenHeight) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    var isRendered by remember { mutableStateOf(false) }
 
     LaunchedEffect(visible) {
-        if (visible) offsetY.animateTo(topOffset, tween(300))
-        else offsetY.animateTo(screenHeight, tween(300))
+        if (visible) {
+            isRendered = true
+            offsetY.animateTo(topOffset, tween(300))
+        } else {
+            offsetY.animateTo(screenHeight, tween(300))
+            isRendered = false
+        }
     }
 
-    if (visible || offsetY.value < screenHeight) {
+    if (isRendered) {
         Box(
             modifier = modifier
                 .fillMaxWidth()

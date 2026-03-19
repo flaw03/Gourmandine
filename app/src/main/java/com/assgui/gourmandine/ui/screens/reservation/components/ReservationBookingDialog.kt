@@ -157,7 +157,7 @@ fun ReservationBookingDialog(
                     val label = String.format("%02d:%02d", h, m)
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .background(if (isSelected) AppColors.OrangeAccent else AppColors.BackgroundGray)
                             .clickable { selectedTimeMinutes = minutes }
                             .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -166,7 +166,7 @@ fun ReservationBookingDialog(
                         Text(
                             text = label,
                             color = if (isSelected) Color.White else Color.Black,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             fontSize = 14.sp
                         )
                     }
@@ -186,10 +186,10 @@ fun ReservationBookingDialog(
                     onClick = { if (partySize > 1) partySize-- },
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(AppColors.BackgroundGray)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppColors.OrangeAccent.copy(alpha = 0.15f))
                 ) {
-                    Icon(Icons.Default.Remove, contentDescription = "Moins", tint = Color.Black)
+                    Icon(Icons.Default.Remove, contentDescription = "Moins", tint = AppColors.OrangeAccent)
                 }
                 Text(
                     text = "$partySize",
@@ -201,10 +201,10 @@ fun ReservationBookingDialog(
                     onClick = { if (partySize < 10) partySize++ },
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(AppColors.BackgroundGray)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppColors.OrangeAccent.copy(alpha = 0.15f))
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Plus", tint = Color.Black)
+                    Icon(Icons.Default.Add, contentDescription = "Plus", tint = AppColors.OrangeAccent)
                 }
             }
 
@@ -237,7 +237,7 @@ fun ReservationBookingDialog(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(50.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent)
             ) {

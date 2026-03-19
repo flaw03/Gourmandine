@@ -119,9 +119,10 @@ fun SheetScrollableContent(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onClearFilters,
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppColors.OrangeAccent)
                 ) {
-                    Text("Réinitialiser les filtres", color = Color.White)
+                    Text("Réinitialiser les filtres", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }

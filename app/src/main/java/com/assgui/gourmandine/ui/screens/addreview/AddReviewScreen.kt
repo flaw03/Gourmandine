@@ -527,7 +527,7 @@ private fun PhotoActionButton(
 
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(AppColors.OrangeAccent.copy(alpha = 0.15f * alpha))
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -561,6 +561,7 @@ private fun ReviewPreviewSheet(
         visible = true,
         onDismiss = onDismiss
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -732,5 +733,31 @@ private fun ReviewPreviewSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+
+        // Overlay chargement plein écran
+        if (uiState.isSubmitting) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.6f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = AppColors.OrangeAccent,
+                        strokeWidth = 4.dp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Publication en cours...",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
+        } // Box
     }
 }

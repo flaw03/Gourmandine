@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.assgui.gourmandine.ui.screens.home.RestaurantFilter
 import com.assgui.gourmandine.ui.theme.AppColors
@@ -31,7 +33,8 @@ fun FilterChipsRow(
             FilterChip(
                 selected = selected,
                 onClick = { onToggleFilter(filter) },
-                label = { Text(filter.label) },
+                label = { Text(filter.label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium) },
+                shape = RoundedCornerShape(14.dp),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = AppColors.OrangeAccent,
                     selectedLabelColor = Color.White,
@@ -39,8 +42,8 @@ fun FilterChipsRow(
                     labelColor = Color.Gray
                 ),
                 border = BorderStroke(
-                    width = 1.dp,
-                    color = if (selected) AppColors.OrangeAccent else AppColors.MediumGray
+                    1.dp,
+                    if (selected) AppColors.OrangeAccent else AppColors.MediumGray
                 )
             )
         }

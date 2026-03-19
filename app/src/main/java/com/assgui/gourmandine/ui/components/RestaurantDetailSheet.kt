@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,13 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,7 +55,30 @@ fun RestaurantDetailSheet(
 ) {
     if (!visible || restaurant == null) return
 
-    NavBottomSheet(onDismiss = onDismiss) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = AppShapes.Sheet,
+        containerColor = AppColors.SurfaceSheet,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(AppColors.OrangeLight)
+                )
+            }
+        }
+    ) {
         RestaurantDetailContent(
             restaurant = restaurant,
             reviews = reviews,
@@ -81,7 +101,6 @@ private fun RestaurantDetailContent(
     onReserve: () -> Unit,
     onToggleFavorite: () -> Unit
 ) {
-    // ModalBottomSheet gère le scroll + drag nativement via NestedScroll
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,50 +129,7 @@ private fun RestaurantDetailContent(
             HorizontalDivider(color = AppColors.Divider)
             Spacer(modifier = Modifier.height(14.dp))
 
-            if (restaurant.address.isNotBlank()) {
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = AppColors.OrangeAccent,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = restaurant.address,
-                        fontSize = 14.sp,
-                        color = AppColors.TextSecondary,
-                        lineHeight = 20.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            if (restaurant.phoneNumber.isNotBlank()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = null,
-                        tint = AppColors.OrangeAccent,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = restaurant.phoneNumber,
-                        fontSize = 14.sp,
-                        color = AppColors.TextSecondary
-                    )
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-            }
-
             if (restaurant.description.isNotBlank()) {
-                HorizontalDivider(color = AppColors.Divider)
-                Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "À propos",
                     fontWeight = FontWeight.Bold,

@@ -54,38 +54,41 @@ fun LoginScreen(
     onLoginClick: () -> Unit,
     onGoogleSignIn: () -> Unit = {},
     onNavigateToRegister: () -> Unit,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    isSheet: Boolean = false
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
     ) {
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(AppColors.SurfaceWarm)
-                .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 8.dp)
-        ) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.CenterStart)
+        // Header : masqué en mode sheet (drag handle + gap déjà gérés par NavBottomSheet)
+        if (!isSheet) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppColors.SurfaceWarm)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Retour",
-                    tint = Color.Black
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Retour",
+                        tint = Color.Black
+                    )
+                }
+                Text(
+                    text = "Connexion",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.Black,
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
-            Text(
-                text = "Connexion",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color.Black,
-                modifier = Modifier.align(Alignment.Center)
-            )
         }
 
         Column(
