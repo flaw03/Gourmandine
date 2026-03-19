@@ -15,6 +15,7 @@ val releaseKeystorePath: String = localProperties.getProperty("KEYSTORE_PATH", "
 val releaseKeystorePassword: String = localProperties.getProperty("KEYSTORE_PASSWORD", "")
 val releaseKeyAlias: String = localProperties.getProperty("KEY_ALIAS", "")
 val releaseKeyPassword: String = localProperties.getProperty("KEY_PASSWORD", "")
+val googleWebClientId: String = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID", "")
 
 android {
     namespace = "com.assgui.gourmandine"
@@ -30,6 +31,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 

@@ -102,8 +102,8 @@ fun ProfileScreen(
         when (currentScreen) {
             AuthScreen.LOGIN -> LoginScreen(
                 uiState = uiState,
-                onEmailChange = viewModel::onEmailChange,
-                onPasswordChange = viewModel::onPasswordChange,
+                onEmailChange = viewModel::onRegisterEmailChange,
+                onPasswordChange = viewModel::onRegisterPasswordChange,
                 onLoginClick = viewModel::login,
                 onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                 onNavigateToRegister = {
@@ -115,11 +115,11 @@ fun ProfileScreen(
             )
             AuthScreen.REGISTER -> RegisterScreen(
                 uiState = uiState,
-                onNomChange = viewModel::onNomChange,
-                onPrenomChange = viewModel::onPrenomChange,
-                onEmailChange = viewModel::onEmailChange,
-                onPasswordChange = viewModel::onPasswordChange,
-                onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                onNomChange = viewModel::onRegisterNomChange,
+                onPrenomChange = viewModel::onRegisterPrenomChange,
+                onEmailChange = viewModel::onRegisterEmailChange,
+                onPasswordChange = viewModel::onRegisterPasswordChange,
+                onConfirmPasswordChange = viewModel::onRegisterConfirmPasswordChange,
                 onRegisterClick = viewModel::register,
                 onGoogleSignIn = { viewModel.signInWithGoogle(context) },
                 onNavigateToLogin = {
@@ -182,8 +182,8 @@ private fun ProfileContent(
                 contentAlignment = Alignment.Center
             ) {
                 val initials = buildString {
-                    uiState.userPrenom?.firstOrNull()?.let { append(it.uppercaseChar()) }
-                    uiState.userNom?.firstOrNull()?.let { append(it.uppercaseChar()) }
+                    uiState.profile.userPrenom?.firstOrNull()?.let { append(it.uppercaseChar()) }
+                    uiState.profile.userNom?.firstOrNull()?.let { append(it.uppercaseChar()) }
                 }
                 if (initials.isNotEmpty()) {
                     Text(
@@ -204,9 +204,9 @@ private fun ProfileContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (uiState.userPrenom != null || uiState.userNom != null) {
+            if (uiState.profile.userPrenom != null || uiState.profile.userNom != null) {
                 Text(
-                    text = "${uiState.userPrenom ?: ""} ${uiState.userNom ?: ""}".trim(),
+                    text = "${uiState.profile.userPrenom ?: ""} ${uiState.profile.userNom ?: ""}".trim(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                     color = AppColors.TextPrimary
@@ -215,12 +215,12 @@ private fun ProfileContent(
             }
 
             Text(
-                text = uiState.userEmail ?: "Email non disponible",
+                text = uiState.profile.userEmail ?: "Email non disponible",
                 fontSize = 14.sp,
                 color = AppColors.TextSecondary
             )
 
-            if (uiState.userPhone != null) {
+            if (uiState.profile.userPhone != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -233,7 +233,7 @@ private fun ProfileContent(
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = uiState.userPhone,
+                        text = uiState.profile.userPhone,
                         fontSize = 14.sp,
                         color = AppColors.TextSecondary
                     )
@@ -292,7 +292,7 @@ private fun ProfileContent(
     }
 
     // Bottom sheet édition profil
-    if (uiState.isEditingProfile) {
+    if (uiState.editProfile.isEditing) {
         ModalBottomSheet(
             onDismissRequest = onCloseEditProfile,
             sheetState = sheetState,
@@ -339,11 +339,11 @@ private fun EditProfileSheet(
         Spacer(modifier = Modifier.height(4.dp))
 
         OutlinedTextField(
-            value = uiState.editPrenom,
+            value = uiState.editProfile.prenom,
             onValueChange = onPrenomChange,
             label = { Text("Prénom") },
-            isError = uiState.editPrenomError != null,
-            supportingText = uiState.editPrenomError?.let { { Text(it, color = Color.Red) } },
+            isError = uiState.editProfile.prenomError != null,
+            supportingText = uiState.editProfile.prenomError?.let { { Text(it, color = Color.Red) } },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = AppShapes.Large,
@@ -356,11 +356,11 @@ private fun EditProfileSheet(
         )
 
         OutlinedTextField(
-            value = uiState.editNom,
+            value = uiState.editProfile.nom,
             onValueChange = onNomChange,
             label = { Text("Nom") },
-            isError = uiState.editNomError != null,
-            supportingText = uiState.editNomError?.let { { Text(it, color = Color.Red) } },
+            isError = uiState.editProfile.nomError != null,
+            supportingText = uiState.editProfile.nomError?.let { { Text(it, color = Color.Red) } },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = AppShapes.Large,
@@ -373,7 +373,7 @@ private fun EditProfileSheet(
         )
 
         OutlinedTextField(
-            value = uiState.editPhone,
+            value = uiState.editProfile.phone,
             onValueChange = onPhoneChange,
             label = { Text("Téléphone (optionnel)") },
             modifier = Modifier.fillMaxWidth(),

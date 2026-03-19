@@ -6,6 +6,7 @@ import android.provider.CalendarContract
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.assgui.gourmandine.data.ServiceLocator
 import com.assgui.gourmandine.data.model.Reservation
 import com.assgui.gourmandine.data.model.Review
 import com.assgui.gourmandine.data.repository.ReservationRepository
@@ -28,10 +29,10 @@ data class ReservationUiState(
 
 private const val TAG = "ReservationVM"
 
-class ReservationViewModel : ViewModel() {
-
-    private val repository = ReservationRepository()
-    private val reviewRepository = ReviewRepository()
+class ReservationViewModel(
+    private val repository: ReservationRepository = ServiceLocator.reservationRepository,
+    private val reviewRepository: ReviewRepository = ServiceLocator.reviewRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReservationUiState())
     val uiState: StateFlow<ReservationUiState> = _uiState.asStateFlow()

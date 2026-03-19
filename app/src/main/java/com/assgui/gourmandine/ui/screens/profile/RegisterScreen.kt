@@ -142,7 +142,7 @@ fun RegisterScreen(
         // Prénom et Nom sur la même ligne
         Row(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
-                value = uiState.prenom,
+                value = uiState.form.prenom,
                 onValueChange = onPrenomChange,
                 label = { Text("Prénom") },
                 leadingIcon = {
@@ -152,29 +152,29 @@ fun RegisterScreen(
                 singleLine = true,
                 shape = AppShapes.Large,
                 colors = fieldColors,
-                isError = uiState.prenomError != null,
-                supportingText = uiState.prenomError?.let { { Text(it, color = AppColors.Red) } }
+                isError = uiState.form.prenomError != null,
+                supportingText = uiState.form.prenomError?.let { { Text(it, color = AppColors.Red) } }
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             OutlinedTextField(
-                value = uiState.nom,
+                value = uiState.form.nom,
                 onValueChange = onNomChange,
                 label = { Text("Nom") },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 shape = AppShapes.Large,
                 colors = fieldColors,
-                isError = uiState.nomError != null,
-                supportingText = uiState.nomError?.let { { Text(it, color = AppColors.Red) } }
+                isError = uiState.form.nomError != null,
+                supportingText = uiState.form.nomError?.let { { Text(it, color = AppColors.Red) } }
             )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = uiState.email,
+            value = uiState.form.email,
             onValueChange = onEmailChange,
             label = { Text("Email") },
             leadingIcon = {
@@ -185,14 +185,14 @@ fun RegisterScreen(
             shape = AppShapes.Large,
             colors = fieldColors,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            isError = uiState.emailError != null,
-            supportingText = uiState.emailError?.let { { Text(it, color = AppColors.Red) } }
+            isError = uiState.form.emailError != null,
+            supportingText = uiState.form.emailError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = uiState.password,
+            value = uiState.form.password,
             onValueChange = onPasswordChange,
             label = { Text("Mot de passe") },
             leadingIcon = {
@@ -204,14 +204,14 @@ fun RegisterScreen(
             colors = fieldColors,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
-            isError = uiState.passwordError != null,
-            supportingText = uiState.passwordError?.let { { Text(it, color = AppColors.Red) } }
+            isError = uiState.form.passwordError != null,
+            supportingText = uiState.form.passwordError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = uiState.confirmPassword,
+            value = uiState.form.confirmPassword,
             onValueChange = onConfirmPasswordChange,
             label = { Text("Confirmer le mot de passe") },
             leadingIcon = {
@@ -222,8 +222,8 @@ fun RegisterScreen(
             shape = AppShapes.Large,
             colors = fieldColors,
             visualTransformation = PasswordVisualTransformation(),
-            isError = uiState.confirmPasswordError != null,
-            supportingText = uiState.confirmPasswordError?.let { { Text(it, color = AppColors.Red) } }
+            isError = uiState.form.confirmPasswordError != null,
+            supportingText = uiState.form.confirmPasswordError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         if (uiState.errorMessage != null) {

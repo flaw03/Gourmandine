@@ -1,42 +1,43 @@
 package com.assgui.gourmandine.ui.screens.profile.viewmodel
 
-data class AuthUiState(
-    // Champs formulaire (login/register)
+data class AuthFormState(
     val nom: String = "",
     val prenom: String = "",
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
-
-    // Erreurs validation formulaire
     val nomError: String? = null,
     val prenomError: String? = null,
     val emailError: String? = null,
     val passwordError: String? = null,
-    val confirmPasswordError: String? = null,
+    val confirmPasswordError: String? = null
+)
 
-    // État global
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-    val isLoggedIn: Boolean = false,
-
-    // Infos utilisateur connecté
+data class UserProfileState(
     val userEmail: String? = null,
     val userNom: String? = null,
     val userPrenom: String? = null,
     val userPhone: String? = null,
-
-    // Préférences utilisateur
     val preferredCuisines: Set<String> = emptySet(),
     val preferredBudgets: Set<String> = emptySet(),
-    val preferredCity: String = "",
+    val preferredCity: String = ""
+)
 
-    // Édition profil
-    val isEditingProfile: Boolean = false,
-    val editNom: String = "",
-    val editPrenom: String = "",
-    val editPhone: String = "",
-    val editNomError: String? = null,
-    val editPrenomError: String? = null,
+data class EditProfileState(
+    val isEditing: Boolean = false,
+    val nom: String = "",
+    val prenom: String = "",
+    val phone: String = "",
+    val nomError: String? = null,
+    val prenomError: String? = null,
     val updateSuccess: Boolean = false
+)
+
+data class AuthUiState(
+    val form: AuthFormState = AuthFormState(),
+    val profile: UserProfileState = UserProfileState(),
+    val editProfile: EditProfileState = EditProfileState(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isLoggedIn: Boolean = false
 )

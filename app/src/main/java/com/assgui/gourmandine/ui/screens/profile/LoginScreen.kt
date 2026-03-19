@@ -124,7 +124,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = uiState.email,
+            value = uiState.form.email,
             onValueChange = onEmailChange,
             label = { Text("Email") },
             leadingIcon = {
@@ -139,14 +139,14 @@ fun LoginScreen(
                 cursorColor = AppColors.OrangeAccent,
                 focusedLabelColor = AppColors.OrangeAccent
             ),
-            isError = uiState.emailError != null,
-            supportingText = uiState.emailError?.let { { Text(it, color = AppColors.Red) } }
+            isError = uiState.form.emailError != null,
+            supportingText = uiState.form.emailError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = uiState.password,
+            value = uiState.form.password,
             onValueChange = onPasswordChange,
             label = { Text("Mot de passe") },
             leadingIcon = {
@@ -163,8 +163,8 @@ fun LoginScreen(
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
-            isError = uiState.passwordError != null,
-            supportingText = uiState.passwordError?.let { { Text(it, color = AppColors.Red) } }
+            isError = uiState.form.passwordError != null,
+            supportingText = uiState.form.passwordError?.let { { Text(it, color = AppColors.Red) } }
         )
 
         if (uiState.errorMessage != null) {

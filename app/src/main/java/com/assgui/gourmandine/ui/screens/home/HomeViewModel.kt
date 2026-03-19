@@ -13,6 +13,7 @@ import android.net.NetworkRequest
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.assgui.gourmandine.data.ServiceLocator
 import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.data.model.Review
@@ -31,7 +32,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import android.util.Log
 import kotlinx.coroutines.launch
+
+private const val TAG = "HomeViewModel"
 
 data class HomeUiState(
     val restaurants: List<Restaurant> = emptyList(),
@@ -55,11 +59,12 @@ data class HomeUiState(
     val pendingReview: Boolean = false,
 )
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val placesRepository = PlacesRepository.create(application)
-    private val reviewRepository = ReviewRepository()
-    private val favoritesRepository = FavoritesRepository()
+class HomeViewModel(
+    application: Application,
+    private val placesRepository: PlacesRepository = ServiceLocator.placesRepository,
+    private val reviewRepository: ReviewRepository = ServiceLocator.reviewRepository,
+    private val favoritesRepository: FavoritesRepository = ServiceLocator.favoritesRepository
+) : AndroidViewModel(application) {
     private val connectivityManager = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -128,11 +133,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             return null
         }
         return try {
-            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+            val task = fusedClient.lastLocation
+            // Use Tasks.await for synchronous result (called from init, not main thread concern here)
+            val location = com.google.android.gms.tasks.Tasks.await(task)
             location?.let { LatLng(it.latitude, it.longitude) }
-        } catch (e: SecurityException) {
+        } catch (e: Exception) {
             null
         }
     }
@@ -327,7 +333,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.update { it.copy(favoriteIds = favorites.map { f -> f.restaurantId }.toSet()) }
                 }
                 .onFailure { e ->
-                    android.util.Log.e("HomeViewModel", "loadFavorites failed: ${e::class.simpleName} - ${e.message}", e)
+                    Log.e(TAG, "loadFavorites failed: ${e::class.simpleName} - ${e.message}", e)
                 }
         }
     }
@@ -346,7 +352,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     val revertedIds = _uiState.value.favoriteIds.toMutableSet().apply {
                         if (wasAlreadyFavorite) add(restaurant.id) else remove(restaurant.id)
                     }
-                    android.util.Log.e("HomeViewModel", "toggleFavorite failed: ${e::class.simpleName} - ${e.message}", e)
+                    Log.e(TAG, "toggleFavorite failed: ${e::class.simpleName} - ${e.message}", e)
                     _uiState.update { it.copy(favoriteIds = revertedIds, errorMessage = "Favori: ${e.message}") }
                 }
         }
@@ -412,10 +418,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }}
                 r.rating >= minRating
             }
-            @Suppress("UNUSED_VARIABLE")
-            val passesRating4 = true
-            @Suppress("UNUSED_VARIABLE")
-            val passesRating45 = true
             val passesPrice = if (priceFilters.isNotEmpty()) {
                 priceFilters.any { f ->
                     when (f) {

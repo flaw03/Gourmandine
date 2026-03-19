@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
         if (!Places.isInitialized()) {
             Places.initializeWithNewPlacesApiEnabled(applicationContext, BuildConfig.MAPS_API_KEY)
         }
+        com.assgui.gourmandine.data.ServiceLocator.initPlaces(applicationContext)
         enableEdgeToEdge()
         setContent {
             GourmandineTheme {

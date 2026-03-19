@@ -4,7 +4,6 @@ import android.util.Log
 import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Favorite
 import com.assgui.gourmandine.data.model.Restaurant
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -13,25 +12,19 @@ private const val TAG = "Firestore/Favorites"
 class FavoritesRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
-
-    private fun userId(): String? = auth.currentUser?.uid
 
     private fun itemsCollection(uid: String) =
         firestore.collection("favorites").document(uid).collection("items")
 
     suspend fun toggleFavorite(restaurant: Restaurant): Result<Boolean> {
-        val uid = userId() ?: run {
-            Log.w(TAG, "toggleFavorite: utilisateur non connecté")
-            return Result.failure(Exception("Utilisateur non connecté"))
-        }
+        val uid = requireUserId().getOrElse { return Result.failure(it) }
         return try {
             val docRef = itemsCollection(uid).document(restaurant.id)
             val snapshot = docRef.get().await()
             if (snapshot.exists()) {
                 docRef.delete().await()
                 CacheManager.removeFavorite(restaurant.id)
-                Log.d(TAG, "toggleFavorite: supprimé ${restaurant.name} (${restaurant.id})")
+                Log.d(TAG, "toggleFavorite: supprimé ${restaurant.id}")
                 Result.success(false)
             } else {
                 val favorite = Favorite(
@@ -43,7 +36,7 @@ class FavoritesRepository {
                 )
                 docRef.set(favorite).await()
                 CacheManager.addFavorite(favorite)
-                Log.d(TAG, "toggleFavorite: ajouté ${restaurant.name} (${restaurant.id})")
+                Log.d(TAG, "toggleFavorite: ajouté ${restaurant.id}")
                 Result.success(true)
             }
         } catch (e: Exception) {
@@ -53,10 +46,7 @@ class FavoritesRepository {
     }
 
     suspend fun getFavorites(): Result<List<Favorite>> {
-        val uid = userId() ?: run {
-            Log.w(TAG, "getFavorites: utilisateur non connecté")
-            return Result.failure(Exception("Utilisateur non connecté"))
-        }
+        val uid = requireUserId().getOrElse { return Result.failure(it) }
         CacheManager.getFavorites()?.let {
             Log.d(TAG, "getFavorites: ${it.size} favoris depuis cache")
             return Result.success(it)
@@ -75,10 +65,7 @@ class FavoritesRepository {
     }
 
     suspend fun removeFavorite(restaurantId: String): Result<Unit> {
-        val uid = userId() ?: run {
-            Log.w(TAG, "removeFavorite: utilisateur non connecté")
-            return Result.failure(Exception("Utilisateur non connecté"))
-        }
+        val uid = requireUserId().getOrElse { return Result.failure(it) }
         return try {
             itemsCollection(uid).document(restaurantId).delete().await()
             CacheManager.removeFavorite(restaurantId)
@@ -91,7 +78,7 @@ class FavoritesRepository {
     }
 
     suspend fun isFavorite(restaurantId: String): Result<Boolean> {
-        val uid = userId() ?: return Result.success(false)
+        val uid = requireUserId().getOrElse { return Result.success(false) }
         CacheManager.getFavoriteIds()?.let {
             return Result.success(restaurantId in it)
         }

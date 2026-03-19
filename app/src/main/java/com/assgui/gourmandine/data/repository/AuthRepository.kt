@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.data.repository
 
 import android.content.Context
+import com.assgui.gourmandine.BuildConfig
 import com.assgui.gourmandine.data.cache.CacheManager
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -80,7 +81,6 @@ class AuthRepository {
     }
 
     companion object {
-        private const val WEB_CLIENT_ID =
-            "588683615939-2g9lpc9p1t804jk689tn9vrbjak3ni6k.apps.googleusercontent.com"
+        private val WEB_CLIENT_ID = BuildConfig.GOOGLE_WEB_CLIENT_ID
     }
 }

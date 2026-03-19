@@ -21,6 +21,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +43,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.assgui.gourmandine.ui.screens.home.components.FilterBottomSheet
@@ -67,6 +71,7 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     var showFilterSheet by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(uiState.cameraPosition, uiState.cameraZoom)
@@ -250,6 +255,18 @@ fun HomeScreen(
                 )
             }
         }
+
+        LaunchedEffect(uiState.errorMessage) {
+            uiState.errorMessage?.let {
+                snackbarHostState.showSnackbar(it)
+                viewModel.clearError()
+            }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
 
         if (showFilterSheet) {
             FilterBottomSheet(

@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.data.repository
 
 import android.content.Context
+import android.util.Log
 
 import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Restaurant
@@ -26,6 +27,8 @@ sealed class PlacesResult {
     data class Success(val restaurants: List<Restaurant>) : PlacesResult()
     data class Error(val message: String) : PlacesResult()
 }
+
+private const val TAG = "PlacesRepository"
 
 class PlacesRepository(private val placesClient: PlacesClient) {
 
@@ -63,6 +66,7 @@ class PlacesRepository(private val placesClient: PlacesClient) {
             CacheManager.putRestaurant(restaurant)
             restaurant
         } catch (e: Exception) {
+            Log.w(TAG, "fetchPlaceById failed for $placeId", e)
             null
         }
     }
@@ -88,6 +92,7 @@ class PlacesRepository(private val placesClient: PlacesClient) {
             CacheManager.putGoogleReviews(placeId, reviews)
             reviews
         } catch (e: Exception) {
+            Log.w(TAG, "fetchGoogleReviews failed for $placeId", e)
             emptyList()
         }
     }
@@ -148,7 +153,8 @@ class PlacesRepository(private val placesClient: PlacesClient) {
                         .build()
                     val response = placesClient.fetchResolvedPhotoUri(request).await()
                     response.uri?.toString()
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w(TAG, "resolvePhotoUri failed", e)
                     null
                 }
             }

@@ -6,7 +6,6 @@ import com.assgui.gourmandine.data.model.Reservation
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.data.model.Review
 import com.assgui.gourmandine.data.model.User
-import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "CacheManager"
 
@@ -20,241 +19,152 @@ object CacheManager {
     private const val USER_TTL = 30 * 60 * 1000L         // 30 min
     private const val NEARBY_TTL = 3 * 60 * 1000L        // 3 min
 
-    // ── Generic cache entry with timestamp ──────────────────────────
-    private data class CacheEntry<T>(
-        val data: T,
-        val timestamp: Long = System.currentTimeMillis()
-    ) {
-        fun isExpired(ttl: Long): Boolean =
-            System.currentTimeMillis() - timestamp > ttl
+    // ── Caches ──────────────────────────────────────────────────────
+    private val restaurants = TypedCache<String, Restaurant>(RESTAURANT_TTL)
+    private val nearbyResults = TypedCache<String, List<Restaurant>>(NEARBY_TTL)
+    private val reviewsByRestaurant = TypedCache<String, List<Review>>(REVIEWS_TTL)
+    private val googleReviewsByRestaurant = TypedCache<String, List<Review>>(REVIEWS_TTL)
+    private val reviewsByUser = TypedCache<String, List<Review>>(REVIEWS_TTL)
+    private val reviewImages = TypedCache<String, String>(REVIEWS_TTL)
+    private val favoritesCache = SingleCache<List<Favorite>>(FAVORITES_TTL)
+    private val favoriteIdsCache = SingleCache<Set<String>>(FAVORITES_TTL)
+    private val reservationsCache = SingleCache<List<Reservation>>(RESERVATIONS_TTL)
+    private val userCache = SingleCache<User>(USER_TTL)
+
+    // ── Nearby key helper ───────────────────────────────────────────
+    private fun nearbyKey(lat: Double, lng: Double): String {
+        val latR = Math.round(lat * 1000.0) / 1000.0
+        val lngR = Math.round(lng * 1000.0) / 1000.0
+        return "$latR,$lngR"
     }
 
-    // ── Restaurant cache (by placeId) ───────────────────────────────
-    private val restaurants = ConcurrentHashMap<String, CacheEntry<Restaurant>>()
-
+    // ── Restaurant ──────────────────────────────────────────────────
     fun putRestaurant(restaurant: Restaurant) {
         if (restaurant.id.isBlank()) return
-        restaurants[restaurant.id] = CacheEntry(restaurant)
+        restaurants.put(restaurant.id, restaurant)
     }
 
     fun putRestaurants(list: List<Restaurant>) {
         list.forEach { putRestaurant(it) }
     }
 
-    fun getRestaurant(placeId: String): Restaurant? {
-        val entry = restaurants[placeId] ?: return null
-        if (entry.isExpired(RESTAURANT_TTL)) {
-            restaurants.remove(placeId)
-            return null
-        }
-        return entry.data
-    }
+    fun getRestaurant(placeId: String): Restaurant? = restaurants.get(placeId)
 
-    fun getAllCachedRestaurants(): List<Restaurant> =
-        restaurants.values
-            .filter { !it.isExpired(RESTAURANT_TTL) }
-            .map { it.data }
+    fun getAllCachedRestaurants(): List<Restaurant> = restaurants.getAll()
 
-    // ── Nearby search results cache (by area key) ───────────────────
-    private data class NearbyKey(val latRounded: Double, val lngRounded: Double)
-
-    private val nearbyResults = ConcurrentHashMap<NearbyKey, CacheEntry<List<Restaurant>>>()
-
-    private fun nearbyKey(lat: Double, lng: Double): NearbyKey =
-        NearbyKey(
-            latRounded = Math.round(lat * 1000.0) / 1000.0,
-            lngRounded = Math.round(lng * 1000.0) / 1000.0
-        )
-
+    // ── Nearby search results ───────────────────────────────────────
     fun putNearbyResults(lat: Double, lng: Double, list: List<Restaurant>) {
-        val key = nearbyKey(lat, lng)
-        nearbyResults[key] = CacheEntry(list)
+        nearbyResults.put(nearbyKey(lat, lng), list)
         putRestaurants(list)
         Log.d(TAG, "putNearby: ${list.size} restaurants cached for ($lat, $lng)")
     }
 
     fun getNearbyResults(lat: Double, lng: Double): List<Restaurant>? {
-        val key = nearbyKey(lat, lng)
-        val entry = nearbyResults[key] ?: return null
-        if (entry.isExpired(NEARBY_TTL)) {
-            nearbyResults.remove(key)
-            return null
+        val result = nearbyResults.get(nearbyKey(lat, lng))
+        if (result != null) {
+            Log.d(TAG, "getNearby: cache hit for ($lat, $lng) -> ${result.size} restaurants")
         }
-        Log.d(TAG, "getNearby: cache hit for ($lat, $lng) -> ${entry.data.size} restaurants")
-        return entry.data
+        return result
     }
 
-    // ── Reviews cache (by restaurantId) ─────────────────────────────
-    private val reviewsByRestaurant = ConcurrentHashMap<String, CacheEntry<List<Review>>>()
-    private val googleReviewsByRestaurant = ConcurrentHashMap<String, CacheEntry<List<Review>>>()
-    private val reviewsByUser = ConcurrentHashMap<String, CacheEntry<List<Review>>>()
-
+    // ── Reviews ─────────────────────────────────────────────────────
     fun putReviews(restaurantId: String, reviews: List<Review>) {
-        reviewsByRestaurant[restaurantId] = CacheEntry(reviews)
+        reviewsByRestaurant.put(restaurantId, reviews)
     }
 
-    fun getReviews(restaurantId: String): List<Review>? {
-        val entry = reviewsByRestaurant[restaurantId] ?: return null
-        if (entry.isExpired(REVIEWS_TTL)) {
-            reviewsByRestaurant.remove(restaurantId)
-            return null
-        }
-        return entry.data
-    }
+    fun getReviews(restaurantId: String): List<Review>? = reviewsByRestaurant.get(restaurantId)
 
     fun putGoogleReviews(restaurantId: String, reviews: List<Review>) {
-        googleReviewsByRestaurant[restaurantId] = CacheEntry(reviews)
+        googleReviewsByRestaurant.put(restaurantId, reviews)
     }
 
-    fun getGoogleReviews(restaurantId: String): List<Review>? {
-        val entry = googleReviewsByRestaurant[restaurantId] ?: return null
-        if (entry.isExpired(REVIEWS_TTL)) {
-            googleReviewsByRestaurant.remove(restaurantId)
-            return null
-        }
-        return entry.data
-    }
+    fun getGoogleReviews(restaurantId: String): List<Review>? = googleReviewsByRestaurant.get(restaurantId)
 
     fun putUserReviews(userId: String, reviews: List<Review>) {
-        reviewsByUser[userId] = CacheEntry(reviews)
+        reviewsByUser.put(userId, reviews)
     }
 
-    fun getUserReviews(userId: String): List<Review>? {
-        val entry = reviewsByUser[userId] ?: return null
-        if (entry.isExpired(REVIEWS_TTL)) {
-            reviewsByUser.remove(userId)
-            return null
-        }
-        return entry.data
-    }
+    fun getUserReviews(userId: String): List<Review>? = reviewsByUser.get(userId)
 
     fun addUserReview(userId: String, review: Review) {
-        val current = reviewsByUser[userId]?.data ?: emptyList()
-        reviewsByUser[userId] = CacheEntry(listOf(review) + current)
-        // Also update restaurant reviews cache
-        val restaurantReviews = reviewsByRestaurant[review.restaurantId]?.data ?: emptyList()
-        reviewsByRestaurant[review.restaurantId] = CacheEntry(listOf(review) + restaurantReviews)
+        val current = reviewsByUser.get(userId) ?: emptyList()
+        reviewsByUser.put(userId, listOf(review) + current)
+        val restaurantReviews = reviewsByRestaurant.get(review.restaurantId) ?: emptyList()
+        reviewsByRestaurant.put(review.restaurantId, listOf(review) + restaurantReviews)
     }
 
     fun removeUserReview(userId: String, reviewId: String) {
-        reviewsByUser[userId]?.let { entry ->
-            reviewsByUser[userId] = CacheEntry(entry.data.filter { it.id != reviewId })
+        reviewsByUser.get(userId)?.let { reviews ->
+            reviewsByUser.put(userId, reviews.filter { it.id != reviewId })
         }
     }
 
-    // ── Favorites cache (for current user) ──────────────────────────
-    private var favoritesEntry: CacheEntry<List<Favorite>>? = null
-    private var favoriteIdsEntry: CacheEntry<Set<String>>? = null
-
+    // ── Favorites ───────────────────────────────────────────────────
     fun putFavorites(favorites: List<Favorite>) {
-        favoritesEntry = CacheEntry(favorites)
-        favoriteIdsEntry = CacheEntry(favorites.map { it.restaurantId }.toSet())
+        favoritesCache.put(favorites)
+        favoriteIdsCache.put(favorites.map { it.restaurantId }.toSet())
         Log.d(TAG, "putFavorites: ${favorites.size} cached")
     }
 
-    fun getFavorites(): List<Favorite>? {
-        val entry = favoritesEntry ?: return null
-        if (entry.isExpired(FAVORITES_TTL)) {
-            favoritesEntry = null
-            return null
-        }
-        return entry.data
-    }
+    fun getFavorites(): List<Favorite>? = favoritesCache.get()
 
-    fun getFavoriteIds(): Set<String>? {
-        val entry = favoriteIdsEntry ?: return null
-        if (entry.isExpired(FAVORITES_TTL)) {
-            favoriteIdsEntry = null
-            return null
-        }
-        return entry.data
-    }
+    fun getFavoriteIds(): Set<String>? = favoriteIdsCache.get()
 
     fun addFavorite(favorite: Favorite) {
-        val current = favoritesEntry?.data ?: emptyList()
+        val current = favoritesCache.get() ?: emptyList()
         putFavorites(current + favorite)
     }
 
     fun removeFavorite(restaurantId: String) {
-        val current = favoritesEntry?.data ?: return
+        val current = favoritesCache.get() ?: return
         putFavorites(current.filter { it.restaurantId != restaurantId })
     }
 
-    // ── Reservations cache (for current user) ───────────────────────
-    private var reservationsEntry: CacheEntry<List<Reservation>>? = null
-
+    // ── Reservations ────────────────────────────────────────────────
     fun putReservations(reservations: List<Reservation>) {
-        reservationsEntry = CacheEntry(reservations)
+        reservationsCache.put(reservations)
         Log.d(TAG, "putReservations: ${reservations.size} cached")
     }
 
-    fun getReservations(): List<Reservation>? {
-        val entry = reservationsEntry ?: return null
-        if (entry.isExpired(RESERVATIONS_TTL)) {
-            reservationsEntry = null
-            return null
-        }
-        return entry.data
-    }
+    fun getReservations(): List<Reservation>? = reservationsCache.get()
 
     fun addReservation(reservation: Reservation) {
-        val current = reservationsEntry?.data ?: emptyList()
-        reservationsEntry = CacheEntry(current + reservation)
+        val current = reservationsCache.get() ?: emptyList()
+        reservationsCache.put(current + reservation)
     }
 
     fun removeReservation(reservationId: String) {
-        val current = reservationsEntry?.data ?: return
-        reservationsEntry = CacheEntry(current.filter { it.id != reservationId })
+        val current = reservationsCache.get() ?: return
+        reservationsCache.put(current.filter { it.id != reservationId })
     }
 
     fun updateReservation(reservationId: String, transform: (Reservation) -> Reservation) {
-        val current = reservationsEntry?.data ?: return
-        reservationsEntry = CacheEntry(current.map { if (it.id == reservationId) transform(it) else it })
+        val current = reservationsCache.get() ?: return
+        reservationsCache.put(current.map { if (it.id == reservationId) transform(it) else it })
     }
 
-    // ── User profile cache ──────────────────────────────────────────
-    private var userEntry: CacheEntry<User>? = null
-
+    // ── User profile ────────────────────────────────────────────────
     fun putUser(user: User) {
-        userEntry = CacheEntry(user)
+        userCache.put(user)
     }
 
-    fun getUser(): User? {
-        val entry = userEntry ?: return null
-        if (entry.isExpired(USER_TTL)) {
-            userEntry = null
-            return null
-        }
-        return entry.data
-    }
+    fun getUser(): User? = userCache.get()
 
-    // ── Review images cache (restaurantId -> first image URL) ───────
-    private val reviewImages = ConcurrentHashMap<String, CacheEntry<String>>()
-
+    // ── Review images ───────────────────────────────────────────────
     fun putReviewImage(restaurantId: String, imageUrl: String) {
-        reviewImages[restaurantId] = CacheEntry(imageUrl)
+        reviewImages.put(restaurantId, imageUrl)
     }
 
-    fun getReviewImage(restaurantId: String): String? {
-        val entry = reviewImages[restaurantId] ?: return null
-        if (entry.isExpired(REVIEWS_TTL)) {
-            reviewImages.remove(restaurantId)
-            return null
-        }
-        return entry.data
-    }
+    fun getReviewImage(restaurantId: String): String? = reviewImages.get(restaurantId)
 
-    fun getCachedReviewImages(): Map<String, String> =
-        reviewImages.entries
-            .filter { !it.value.isExpired(REVIEWS_TTL) }
-            .associate { it.key to it.value.data }
+    fun getCachedReviewImages(): Map<String, String> = reviewImages.getAllEntries()
 
-    // ── Clear all caches (on logout) ────────────────────────────────
+    // ── Clear ───────────────────────────────────────────────────────
     fun clearUserData() {
-        favoritesEntry = null
-        favoriteIdsEntry = null
-        reservationsEntry = null
-        userEntry = null
+        favoritesCache.clear()
+        favoriteIdsCache.clear()
+        reservationsCache.clear()
+        userCache.clear()
         reviewsByUser.clear()
         Log.d(TAG, "clearUserData: user-specific caches cleared")
     }
@@ -266,10 +176,10 @@ object CacheManager {
         googleReviewsByRestaurant.clear()
         reviewsByUser.clear()
         reviewImages.clear()
-        favoritesEntry = null
-        favoriteIdsEntry = null
-        reservationsEntry = null
-        userEntry = null
+        favoritesCache.clear()
+        favoriteIdsCache.clear()
+        reservationsCache.clear()
+        userCache.clear()
         Log.d(TAG, "clearAll: all caches cleared")
     }
 }

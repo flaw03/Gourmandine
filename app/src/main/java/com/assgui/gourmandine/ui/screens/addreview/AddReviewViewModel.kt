@@ -3,6 +3,7 @@ package com.assgui.gourmandine.ui.screens.addreview
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.assgui.gourmandine.data.ServiceLocator
 import com.assgui.gourmandine.data.model.Review
 import com.assgui.gourmandine.data.repository.ImageStorageRepository
 import com.assgui.gourmandine.data.repository.ReviewRepository
@@ -26,8 +27,8 @@ data class AddReviewUiState(
 )
 
 class AddReviewViewModel(
-    private val reviewRepository: ReviewRepository = ReviewRepository(),
-    private val imageStorageRepository: ImageStorageRepository = ImageStorageRepository()
+    private val reviewRepository: ReviewRepository = ServiceLocator.reviewRepository,
+    private val imageStorageRepository: ImageStorageRepository = ServiceLocator.imageStorageRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddReviewUiState())
