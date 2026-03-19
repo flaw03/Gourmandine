@@ -2,6 +2,7 @@ package com.assgui.gourmandine.data.repository
 
 import android.content.Context
 
+import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.data.model.Review
 import java.text.SimpleDateFormat
@@ -54,21 +55,25 @@ class PlacesRepository(private val placesClient: PlacesClient) {
     )
 
     suspend fun fetchPlaceById(placeId: String): Restaurant? {
+        CacheManager.getRestaurant(placeId)?.let { return it }
         return try {
             val request = FetchPlaceRequest.builder(placeId, placeFields).build()
             val response = placesClient.fetchPlace(request).await()
-            response.place.toRestaurant()
+            val restaurant = response.place.toRestaurant()
+            CacheManager.putRestaurant(restaurant)
+            restaurant
         } catch (e: Exception) {
             null
         }
     }
 
     suspend fun fetchGoogleReviews(placeId: String): List<Review> {
+        CacheManager.getGoogleReviews(placeId)?.let { return it }
         return try {
             val request = FetchPlaceRequest.builder(placeId, listOf(Place.Field.REVIEWS)).build()
             val response = placesClient.fetchPlace(request).await()
             val place = response.place
-            place.reviews?.map { review ->
+            val reviews = place.reviews?.map { review ->
                 Review(
                     id = "google_${placeId}_${parsePublishTime(review.publishTime)}",
                     restaurantId = placeId,
@@ -80,6 +85,8 @@ class PlacesRepository(private val placesClient: PlacesClient) {
                     isGoogleReview = true
                 )
             } ?: emptyList()
+            CacheManager.putGoogleReviews(placeId, reviews)
+            reviews
         } catch (e: Exception) {
             emptyList()
         }
@@ -97,6 +104,7 @@ class PlacesRepository(private val placesClient: PlacesClient) {
     }
 
     suspend fun searchNearby(lat: Double, lng: Double, radiusMeters: Double = 1500.0): PlacesResult {
+        CacheManager.getNearbyResults(lat, lng)?.let { return PlacesResult.Success(it) }
         return try {
             val center = LatLng(lat, lng)
             val bounds = CircularBounds.newInstance(center, radiusMeters)
@@ -106,6 +114,7 @@ class PlacesRepository(private val placesClient: PlacesClient) {
                 .build()
             val response = placesClient.searchNearby(request).await()
             val restaurants = response.places.map { it.toRestaurant() }
+            CacheManager.putNearbyResults(lat, lng, restaurants)
             PlacesResult.Success(restaurants)
         } catch (e: Exception) {
             PlacesResult.Error(e.message ?: "Erreur recherche à proximité")
@@ -122,6 +131,7 @@ class PlacesRepository(private val placesClient: PlacesClient) {
             }
             val response = placesClient.searchByText(builder.build()).await()
             val restaurants = response.places.map { it.toRestaurant() }
+            CacheManager.putRestaurants(restaurants)
             PlacesResult.Success(restaurants)
         } catch (e: Exception) {
             PlacesResult.Error(e.message ?: "Erreur recherche textuelle")

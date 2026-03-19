@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.data.repository
 
 import android.content.Context
+import com.assgui.gourmandine.data.cache.CacheManager
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -75,6 +76,7 @@ class AuthRepository {
 
     fun logout() {
         auth.signOut()
+        CacheManager.clearUserData()
     }
 
     companion object {

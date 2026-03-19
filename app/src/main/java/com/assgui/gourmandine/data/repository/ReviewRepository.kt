@@ -1,5 +1,6 @@
 package com.assgui.gourmandine.data.repository
 
+import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Review
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -11,6 +12,7 @@ class ReviewRepository {
     private val reviewsCollection = firestore.collection("reviews")
 
     suspend fun getReviewsForRestaurant(restaurantId: String): Result<List<Review>> {
+        CacheManager.getReviews(restaurantId)?.let { return Result.success(it) }
         return try {
             val snapshot = reviewsCollection
                 .whereEqualTo("restaurantId", restaurantId)
@@ -18,6 +20,7 @@ class ReviewRepository {
                 .get()
                 .await()
             val reviews = snapshot.toObjects(Review::class.java)
+            CacheManager.putReviews(restaurantId, reviews)
             Result.success(reviews)
         } catch (e: Exception) {
             Result.failure(e)
@@ -25,6 +28,9 @@ class ReviewRepository {
     }
 
     suspend fun getReviewsByUser(userId: String, fromCache: Boolean = false): Result<List<Review>> {
+        if (fromCache) {
+            CacheManager.getUserReviews(userId)?.let { return Result.success(it) }
+        }
         return try {
             val source = if (fromCache) Source.CACHE else Source.DEFAULT
             val snapshot = reviewsCollection
@@ -32,7 +38,9 @@ class ReviewRepository {
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get(source)
                 .await()
-            Result.success(snapshot.toObjects(Review::class.java))
+            val reviews = snapshot.toObjects(Review::class.java)
+            CacheManager.putUserReviews(userId, reviews)
+            Result.success(reviews)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -52,6 +60,7 @@ class ReviewRepository {
             val docRef = reviewsCollection.document()
             val reviewWithId = review.copy(id = docRef.id)
             docRef.set(reviewWithId).await()
+            CacheManager.addUserReview(review.userId, reviewWithId)
             Result.success(docRef.id)
         } catch (e: Exception) {
             Result.failure(e)

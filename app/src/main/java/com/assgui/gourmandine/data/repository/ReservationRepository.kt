@@ -1,6 +1,7 @@
 package com.assgui.gourmandine.data.repository
 
 import android.util.Log
+import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Reservation
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -28,6 +29,7 @@ class ReservationRepository {
             val docRef = itemsCollection(uid).document()
             val withId = reservation.copy(id = docRef.id, userId = uid)
             docRef.set(withId).await()
+            CacheManager.addReservation(withId)
             Log.d(TAG, "addReservation: ajouté ${reservation.restaurantName} id=${docRef.id}")
             Result.success(docRef.id)
         } catch (e: Exception) {
@@ -41,11 +43,18 @@ class ReservationRepository {
             Log.w(TAG, "getReservations: utilisateur non connecté")
             return Result.failure(Exception("Utilisateur non connecté"))
         }
+        if (fromCache) {
+            CacheManager.getReservations()?.let {
+                Log.d(TAG, "getReservations: ${it.size} depuis cache mémoire")
+                return Result.success(it)
+            }
+        }
         return try {
             val source = if (fromCache) Source.CACHE else Source.DEFAULT
             Log.d(TAG, "getReservations: chargement pour uid=$uid (cache=$fromCache)")
             val snapshot = itemsCollection(uid).get(source).await()
             val reservations = snapshot.documents.mapNotNull { it.toObject(Reservation::class.java) }
+            CacheManager.putReservations(reservations)
             Log.d(TAG, "getReservations: ${reservations.size} réservations chargées")
             Result.success(reservations)
         } catch (e: Exception) {
@@ -61,6 +70,7 @@ class ReservationRepository {
         }
         return try {
             itemsCollection(uid).document(id).delete().await()
+            CacheManager.removeReservation(id)
             Log.d(TAG, "deleteReservation: supprimé $id")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -76,6 +86,7 @@ class ReservationRepository {
         }
         return try {
             itemsCollection(uid).document(id).update("dateMs", newDateMs).await()
+            CacheManager.updateReservation(id) { it.copy(dateMs = newDateMs) }
             Log.d(TAG, "updateReservationDate: mis à jour $id -> $newDateMs")
             Result.success(Unit)
         } catch (e: Exception) {

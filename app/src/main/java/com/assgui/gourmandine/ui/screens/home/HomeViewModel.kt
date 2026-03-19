@@ -12,6 +12,7 @@ import android.net.NetworkRequest
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Restaurant
 import com.assgui.gourmandine.data.model.Review
 import com.assgui.gourmandine.data.repository.FavoritesRepository
@@ -305,8 +306,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadReviewImagesForRestaurants(restaurants: List<Restaurant>) {
         viewModelScope.launch {
-            val imageMap = mutableMapOf<String, String>()
-            for (restaurant in restaurants) {
+            // Start with cached images
+            val imageMap = CacheManager.getCachedReviewImages().toMutableMap()
+            val uncached = restaurants.filter { it.id !in imageMap }
+            for (restaurant in uncached) {
                 reviewRepository.getReviewsForRestaurant(restaurant.id)
                     .onSuccess { reviews ->
                         val firstImage = reviews
@@ -314,6 +317,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             .firstOrNull()
                         if (firstImage != null) {
                             imageMap[restaurant.id] = firstImage
+                            CacheManager.putReviewImage(restaurant.id, firstImage)
                         }
                     }
             }
@@ -462,8 +466,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openRestaurantById(restaurantId: String) {
-        // Cherche d'abord dans la liste déjà chargée
+        // Cherche d'abord dans la liste UI, puis dans le CacheManager
         val cached = _uiState.value.restaurants.find { it.id == restaurantId }
+            ?: CacheManager.getRestaurant(restaurantId)
         if (cached != null) {
             _uiState.update {
                 it.copy(
@@ -476,7 +481,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             loadReviews(restaurantId)
             return
         }
-        // Sinon fetch depuis Places API
+        // Sinon fetch depuis Places API (sera aussi mis en cache par le repository)
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val restaurant = placesRepository.fetchPlaceById(restaurantId)

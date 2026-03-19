@@ -8,6 +8,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -173,33 +175,35 @@ fun GourmandineApp() {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when (selectedTab) {
-                0 -> HomeScreen(viewModel = homeViewModel)
-                1 -> FavoritesScreen(
-                    onRestaurantClick = { restaurantId ->
-                        homeViewModel.openRestaurantById(restaurantId)
-                    },
-                    onFavoriteRemoved = { restaurantId ->
-                        homeViewModel.onRemoveFavoriteFromList(restaurantId)
-                    }
-                )
-                2 -> ReservationScreen(
-                    viewModel = reservationViewModel,
-                    onViewOnMap = { restaurantId ->
-                        homeViewModel.openRestaurantById(restaurantId)
-                    },
-                    onAddReview = { restaurantId ->
-                        homeViewModel.openRestaurantForReview(restaurantId)
-                    }
-                )
-                3 -> ProfileScreen(
-                    onNavigateToFavorites = {
-                        if (isLoggedIn) selectedTab = 1
-                    },
-                    onNavigateToReservations = {
-                        if (isLoggedIn) selectedTab = 2
-                    }
-                )
+            Crossfade(targetState = selectedTab, animationSpec = tween(200), label = "tab") { tab ->
+                when (tab) {
+                    0 -> HomeScreen(viewModel = homeViewModel)
+                    1 -> FavoritesScreen(
+                        onRestaurantClick = { restaurantId ->
+                            homeViewModel.openRestaurantById(restaurantId)
+                        },
+                        onFavoriteRemoved = { restaurantId ->
+                            homeViewModel.onRemoveFavoriteFromList(restaurantId)
+                        }
+                    )
+                    2 -> ReservationScreen(
+                        viewModel = reservationViewModel,
+                        onViewOnMap = { restaurantId ->
+                            homeViewModel.openRestaurantById(restaurantId)
+                        },
+                        onAddReview = { restaurantId ->
+                            homeViewModel.openRestaurantForReview(restaurantId)
+                        }
+                    )
+                    3 -> ProfileScreen(
+                        onNavigateToFavorites = {
+                            if (isLoggedIn) selectedTab = 1
+                        },
+                        onNavigateToReservations = {
+                            if (isLoggedIn) selectedTab = 2
+                        }
+                    )
+                }
             }
         }
 
@@ -249,6 +253,7 @@ fun GourmandineApp() {
                 containerColor = AppColors.SurfaceWarm
             ) {
                 ProfileScreen(
+                    isSheet = true,
                     onLoginSuccess = {
                         showLoginSheet = false
                         pendingLoginAction?.invoke()

@@ -173,7 +173,16 @@ private fun ProfileContent(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.SurfaceWarm)
+            .statusBarsPadding()
     ) {
+        Text(
+            text = "Mon Profil",
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
+            color = AppColors.TextPrimary,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        )
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -182,7 +191,7 @@ private fun ProfileContent(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Avatar avec initiales
             Box(
