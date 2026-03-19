@@ -1,13 +1,10 @@
 package com.assgui.gourmandine.ui.screens.profile
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,8 +29,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -48,7 +43,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,11 +87,8 @@ fun ProfileScreen(
 
     if (uiState.isLoggedIn) {
         ProfileContent(
-            isSheet = isSheet,
             uiState = uiState,
             onLogout = { viewModel.logout() },
-            onBack = onBack,
-            onNavigateToHome = onNavigateToHome,
             onNavigateToReservations = onNavigateToReservations,
             onNavigateToFavorites = onNavigateToFavorites,
             onEditProfile = { viewModel.openEditProfile() },
@@ -105,11 +96,7 @@ fun ProfileScreen(
             onEditNomChange = viewModel::onEditNomChange,
             onEditPrenomChange = viewModel::onEditPrenomChange,
             onEditPhoneChange = viewModel::onEditPhoneChange,
-            onSaveProfile = { viewModel.saveProfile() },
-            onCuisineToggle = viewModel::onCuisineToggle,
-            onBudgetToggle = viewModel::onBudgetToggle,
-            onPreferredCityChange = viewModel::onPreferredCityChange,
-            onPreferredCitySave = viewModel::onPreferredCitySave
+            onSaveProfile = { viewModel.saveProfile() }
         )
     } else {
         when (currentScreen) {
@@ -149,11 +136,8 @@ fun ProfileScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(
-    isSheet: Boolean = false,
     uiState: AuthUiState,
     onLogout: () -> Unit,
-    onBack: () -> Unit,
-    onNavigateToHome: () -> Unit,
     onNavigateToReservations: () -> Unit,
     onNavigateToFavorites: () -> Unit,
     onEditProfile: () -> Unit,
@@ -161,11 +145,7 @@ private fun ProfileContent(
     onEditNomChange: (String) -> Unit,
     onEditPrenomChange: (String) -> Unit,
     onEditPhoneChange: (String) -> Unit,
-    onSaveProfile: () -> Unit,
-    onCuisineToggle: (String) -> Unit,
-    onBudgetToggle: (String) -> Unit,
-    onPreferredCityChange: (String) -> Unit,
-    onPreferredCitySave: () -> Unit
+    onSaveProfile: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -287,19 +267,6 @@ private fun ProfileContent(
                     onClick = onNavigateToReservations
                 )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Section préférences
-            PreferencesSection(
-                selectedCuisines = uiState.preferredCuisines,
-                selectedBudgets = uiState.preferredBudgets,
-                city = uiState.preferredCity,
-                onCuisineToggle = onCuisineToggle,
-                onBudgetToggle = onBudgetToggle,
-                onCityChange = onPreferredCityChange,
-                onCitySave = onPreferredCitySave
-            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -463,113 +430,6 @@ private fun EditProfileSheet(
             )
         ) {
             Text("Annuler", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun PreferencesSection(
-    selectedCuisines: Set<String>,
-    selectedBudgets: Set<String>,
-    city: String,
-    onCuisineToggle: (String) -> Unit,
-    onBudgetToggle: (String) -> Unit,
-    onCityChange: (String) -> Unit,
-    onCitySave: () -> Unit
-) {
-    val cuisines = listOf("Française", "Italienne", "Asiatique", "Mexicaine", "Japonaise", "Américaine")
-    val budgets = listOf("€", "€€", "€€€")
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(AppShapes.Large)
-            .background(AppColors.SurfaceCard)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = "Préférences",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = AppColors.TextPrimary
-        )
-
-        OutlinedTextField(
-            value = city,
-            onValueChange = onCityChange,
-            label = { Text("Ville préférée") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { if (!it.isFocused) onCitySave() },
-            singleLine = true,
-            shape = AppShapes.Large,
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = AppColors.MediumGray,
-                focusedBorderColor = AppColors.OrangeAccent,
-                cursorColor = AppColors.OrangeAccent,
-                focusedLabelColor = AppColors.OrangeAccent
-            )
-        )
-
-        Text(
-            text = "Type de cuisine",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            color = AppColors.TextSecondary
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            cuisines.forEach { cuisine ->
-                val selected = cuisine in selectedCuisines
-                FilterChip(
-                    selected = selected,
-                    onClick = { onCuisineToggle(cuisine) },
-                    label = { Text(cuisine, fontSize = 12.sp, fontWeight = FontWeight.Medium) },
-                    shape = AppShapes.Pill,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AppColors.OrangeAccent,
-                        selectedLabelColor = Color.White,
-                        containerColor = AppColors.BackgroundGray,
-                        labelColor = Color.Gray
-                    ),
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) AppColors.OrangeAccent else AppColors.MediumGray
-                    )
-                )
-            }
-        }
-
-        Text(
-            text = "Budget",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            color = AppColors.TextSecondary
-        )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            budgets.forEach { budget ->
-                val selected = budget in selectedBudgets
-                FilterChip(
-                    selected = selected,
-                    onClick = { onBudgetToggle(budget) },
-                    label = { Text(budget, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) },
-                    shape = AppShapes.Pill,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AppColors.OrangeAccent,
-                        selectedLabelColor = Color.White,
-                        containerColor = AppColors.BackgroundGray,
-                        labelColor = Color.Gray
-                    ),
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) AppColors.OrangeAccent else AppColors.MediumGray
-                    )
-                )
-            }
         }
     }
 }

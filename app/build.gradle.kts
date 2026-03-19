@@ -102,6 +102,9 @@ dependencies {
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // Google Fonts for Compose
+    implementation("androidx.compose.ui:ui-text-google-fonts")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

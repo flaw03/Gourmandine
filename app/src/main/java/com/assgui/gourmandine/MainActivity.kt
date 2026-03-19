@@ -125,6 +125,7 @@ fun GourmandineApp() {
         if (homeUiState.pendingReview && homeUiState.detailRestaurant != null) {
             reviewRestaurant = homeUiState.detailRestaurant
             homeViewModel.consumePendingReview()
+            homeViewModel.onDismissDetail()
         }
     }
 

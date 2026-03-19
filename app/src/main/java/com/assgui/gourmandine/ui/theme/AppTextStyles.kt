@@ -1,14 +1,14 @@
 package com.assgui.gourmandine.ui.theme
 
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
+/**
+ * Legacy bridge — delegates to AppTypography.
+ * Kept to avoid breaking existing callers.
+ */
 object AppTextStyles {
-    val screenTitle = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AppColors.TextPrimary)
-    val sectionTitle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.TextPrimary)
-    val cardTitle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = AppColors.TextPrimary)
-    val bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal, color = AppColors.TextSecondary, lineHeight = 20.sp)
-    val labelSmall = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Normal, color = AppColors.TextTertiary)
-    val labelBold = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AppColors.OrangeAccent)
+    val screenTitle get() = AppTypography.screenTitle
+    val sectionTitle get() = AppTypography.sectionTitle
+    val cardTitle get() = AppTypography.cardTitle
+    val bodyMedium get() = AppTypography.bodyMedium
+    val labelSmall get() = AppTypography.bodySmall
+    val labelBold get() = AppTypography.labelBold
 }
