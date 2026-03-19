@@ -20,13 +20,11 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -112,13 +110,25 @@ fun GourmandineApp() {
     var restaurantToBook by remember { mutableStateOf<Restaurant?>(null) }
     var reviewRestaurant by remember { mutableStateOf<Restaurant?>(null) }
     var pendingLoginAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var showLoginSheet by remember { mutableStateOf(false) }
 
     val isLoggedIn by produceState(initialValue = FirebaseAuth.getInstance().currentUser != null) {
         val auth = FirebaseAuth.getInstance()
         val listener = FirebaseAuth.AuthStateListener { value = it.currentUser != null }
         auth.addAuthStateListener(listener)
         awaitDispose { auth.removeAuthStateListener(listener) }
+    }
+
+    // Déclenche l'action en attente après connexion
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            pendingLoginAction?.invoke()
+            pendingLoginAction = null
+        } else {
+            // Si on se déconnecte et qu'on est sur un onglet protégé, revenir à Carte
+            if (navItems.getOrNull(selectedTab)?.requiresAuth == true) {
+                selectedTab = 0
+            }
+        }
     }
 
     // Ouvre automatiquement le review quand demandé depuis Réservations
@@ -133,21 +143,16 @@ fun GourmandineApp() {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             bottomBar = {
+                val visibleNavItems = if (isLoggedIn) navItems else navItems.filter { !it.requiresAuth }
                 NavigationBar(
                     containerColor = Color.White,
                     tonalElevation = 0.dp
                 ) {
-                    navItems.forEachIndexed { index, item ->
+                    visibleNavItems.forEach { item ->
+                        val actualIndex = navItems.indexOf(item)
                         NavigationBarItem(
-                            selected = selectedTab == index,
-                            onClick = {
-                                if (item.requiresAuth && !isLoggedIn) {
-                                    pendingLoginAction = { selectedTab = index }
-                                    showLoginSheet = true
-                                } else {
-                                    selectedTab = index
-                                }
-                            },
+                            selected = selectedTab == actualIndex,
+                            onClick = { selectedTab = actualIndex },
                             icon = {
                                 Icon(
                                     imageVector = item.icon,
@@ -158,7 +163,7 @@ fun GourmandineApp() {
                                 Text(
                                     text = item.label,
                                     fontSize = 11.sp,
-                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                    fontWeight = if (selectedTab == actualIndex) FontWeight.Bold else FontWeight.Normal
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
@@ -199,12 +204,8 @@ fun GourmandineApp() {
                             }
                         )
                         3 -> ProfileScreen(
-                            onNavigateToFavorites = {
-                                if (isLoggedIn) selectedTab = 1
-                            },
-                            onNavigateToReservations = {
-                                if (isLoggedIn) selectedTab = 2
-                            }
+                            onNavigateToFavorites = { selectedTab = 1 },
+                            onNavigateToReservations = { selectedTab = 2 }
                         )
                     }
                 }
@@ -220,10 +221,14 @@ fun GourmandineApp() {
                 onDismiss = homeViewModel::onDismissDetail,
                 onAddReview = { restaurant ->
                     if (isLoggedIn) {
+                        homeViewModel.onDismissDetail()
                         reviewRestaurant = restaurant
                     } else {
-                        pendingLoginAction = { reviewRestaurant = restaurant }
-                        showLoginSheet = true
+                        pendingLoginAction = {
+                            homeViewModel.onDismissDetail()
+                            reviewRestaurant = restaurant
+                        }
+                        selectedTab = 3
                     }
                 },
                 onReserve = { restaurant ->
@@ -231,7 +236,7 @@ fun GourmandineApp() {
                         restaurantToBook = restaurant
                     } else {
                         pendingLoginAction = { restaurantToBook = restaurant }
-                        showLoginSheet = true
+                        selectedTab = 3
                     }
                 },
                 onToggleFavorite = { restaurant ->
@@ -239,40 +244,10 @@ fun GourmandineApp() {
                         homeViewModel.onToggleFavorite(restaurant)
                     } else {
                         pendingLoginAction = { homeViewModel.onToggleFavorite(restaurant) }
-                        showLoginSheet = true
+                        selectedTab = 3
                     }
                 }
             )
-
-            // ── Login ModalBottomSheet ────────────────────────────────────────
-            if (showLoginSheet) {
-                val loginSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showLoginSheet = false
-                        pendingLoginAction = null
-                    },
-                    sheetState = loginSheetState,
-                    containerColor = AppColors.SurfaceWarm
-                ) {
-                    ProfileScreen(
-                        isSheet = true,
-                        onLoginSuccess = {
-                            showLoginSheet = false
-                            pendingLoginAction?.invoke()
-                            pendingLoginAction = null
-                        },
-                        onNavigateToFavorites = {
-                            showLoginSheet = false
-                            selectedTab = 1
-                        },
-                        onNavigateToReservations = {
-                            showLoginSheet = false
-                            selectedTab = 2
-                        }
-                    )
-                }
-            }
 
             // ── Booking Dialog ────────────────────────────────────────────────
             restaurantToBook?.let { restaurant ->

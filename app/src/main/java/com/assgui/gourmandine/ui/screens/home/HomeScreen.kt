@@ -141,13 +141,7 @@ fun HomeScreen(
             }
         }
 
-        LaunchedEffect(currentPosition) {
-            if (currentPosition == SheetPosition.Up && !isKeyboardOpen) {
-                focusRequester.requestFocus()
-            }
-        }
-
-        LaunchedEffect(uiState.cameraPosition, uiState.cameraZoom) {
+        LaunchedEffect(uiState.locationTrigger) {
             cameraPositionState.animate(
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.fromLatLngZoom(uiState.cameraPosition, uiState.cameraZoom)

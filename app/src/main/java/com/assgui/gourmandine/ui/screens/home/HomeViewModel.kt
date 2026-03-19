@@ -4,15 +4,17 @@ import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.assgui.gourmandine.data.ServiceLocator
 import com.assgui.gourmandine.data.cache.CacheManager
 import com.assgui.gourmandine.data.model.Restaurant
@@ -21,22 +23,22 @@ import com.assgui.gourmandine.data.repository.FavoritesRepository
 import com.assgui.gourmandine.data.repository.PlacesRepository
 import com.assgui.gourmandine.data.repository.PlacesResult
 import com.assgui.gourmandine.data.repository.ReviewRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import android.util.Log
 import kotlinx.coroutines.launch
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.withContext
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 private const val TAG = "HomeViewModel"
 
@@ -60,6 +62,7 @@ data class HomeUiState(
     val filteredRestaurants: List<Restaurant> = emptyList(),
     val maxDistanceKm: Float? = null,
     val pendingReview: Boolean = false,
+    val locationTrigger: Int = 0,
 )
 
 class HomeViewModel(
@@ -110,7 +113,8 @@ class HomeViewModel(
                 it.copy(
                     userLocation = initialLocation,
                     cameraPosition = initialLocation,
-                    cameraZoom = 15f
+                    cameraZoom = 15f,
+                    locationTrigger = it.locationTrigger + 1
                 )
             }
             loadNearbyRestaurants(initialLocation.latitude, initialLocation.longitude)
@@ -118,6 +122,10 @@ class HomeViewModel(
             loadNearbyRestaurants(48.8566, 2.3522)
         }
         initialLoadDone = true
+        // Si lastLocation était null, tenter une localisation GPS en arrière-plan
+        if (initialLocation == null) {
+            requestCurrentLocationInBackground()
+        }
     }
 
     private var lastFavUid: String? = null
@@ -153,6 +161,31 @@ class HomeViewModel(
         } catch (e: Exception) {
             null
         }
+    }
+
+    private fun requestCurrentLocationInBackground() {
+        val context = getApplication<Application>()
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) return
+
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                location ?: return@addOnSuccessListener
+                val userPosition = LatLng(location.latitude, location.longitude)
+                _uiState.update { state ->
+                    state.copy(
+                        userLocation = userPosition,
+                        cameraPosition = userPosition,
+                        cameraZoom = 15f,
+                        locationTrigger = state.locationTrigger + 1
+                    )
+                }
+                loadNearbyRestaurants(location.latitude, location.longitude)
+            }
     }
 
     private fun observeNetworkConnectivity() {
@@ -211,19 +244,49 @@ class HomeViewModel(
             when (val result = placesRepository.searchByText(query, lat = pos.latitude, lng = pos.longitude)) {
                 is PlacesResult.Success -> {
                     val restaurants = result.restaurants
-                    val first = restaurants.firstOrNull()
-                    _uiState.update { s ->
-                        val refLat = s.userLocation?.latitude ?: s.cameraPosition.latitude
-                        val refLng = s.userLocation?.longitude ?: s.cameraPosition.longitude
-                        s.copy(
-                            restaurants = restaurants,
-                            filteredRestaurants = applyFilters(restaurants, s.activeFilters, s.maxDistanceKm, refLat, refLng),
-                            isLoading = false,
-                            selectedRestaurantId = first?.id,
-                            cameraPosition = first?.let { r -> LatLng(r.latitude, r.longitude) }
-                                ?: s.cameraPosition,
-                            cameraZoom = 14f
-                        )
+                    if (restaurants.isNotEmpty()) {
+                        // Centre la caméra sur le centroïde des résultats
+                        val avgLat = restaurants.map { it.latitude }.average()
+                        val avgLng = restaurants.map { it.longitude }.average()
+                        _uiState.update { s ->
+                            val refLat = s.userLocation?.latitude ?: avgLat
+                            val refLng = s.userLocation?.longitude ?: avgLng
+                            s.copy(
+                                restaurants = restaurants,
+                                filteredRestaurants = applyFilters(restaurants, s.activeFilters, s.maxDistanceKm, refLat, refLng),
+                                isLoading = false,
+                                selectedRestaurantId = restaurants.first().id,
+                                cameraPosition = LatLng(avgLat, avgLng),
+                                cameraZoom = 14f,
+                                locationTrigger = s.locationTrigger + 1
+                            )
+                        }
+                    } else {
+                        // Aucun restaurant trouvé → essayer de géocoder comme nom de ville
+                        val cityLocation = geocodeLocation(query)
+                        if (cityLocation != null) {
+                            _uiState.update { s ->
+                                s.copy(
+                                    isLoading = false,
+                                    restaurants = emptyList(),
+                                    filteredRestaurants = emptyList(),
+                                    selectedRestaurantId = null,
+                                    cameraPosition = cityLocation,
+                                    cameraZoom = 13f,
+                                    locationTrigger = s.locationTrigger + 1
+                                )
+                            }
+                            loadNearbyRestaurants(cityLocation.latitude, cityLocation.longitude)
+                        } else {
+                            _uiState.update { s ->
+                                s.copy(
+                                    restaurants = emptyList(),
+                                    filteredRestaurants = emptyList(),
+                                    isLoading = false,
+                                    selectedRestaurantId = null
+                                )
+                            }
+                        }
                     }
                 }
                 is PlacesResult.Error -> {
@@ -232,6 +295,17 @@ class HomeViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun geocodeLocation(query: String): LatLng? = withContext(Dispatchers.IO) {
+        try {
+            val geocoder = android.location.Geocoder(getApplication(), java.util.Locale.getDefault())
+            @Suppress("DEPRECATION")
+            val addresses = geocoder.getFromLocationName(query, 1)
+            addresses?.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -291,7 +365,8 @@ class HomeViewModel(
                         state.copy(
                             cameraPosition = userPosition,
                             cameraZoom = 15f,
-                            userLocation = userPosition
+                            userLocation = userPosition,
+                            locationTrigger = state.locationTrigger + 1
                         )
                     }
                     loadNearbyRestaurants(it.latitude, it.longitude)
@@ -458,6 +533,7 @@ class HomeViewModel(
     }
 
     fun onCameraIdle(lat: Double, lng: Double) {
+        _uiState.update { it.copy(cameraPosition = LatLng(lat, lng)) }
         if (haversineKm(lastSearchLat, lastSearchLng, lat, lng) > 0.8) {
             lastSearchLat = lat
             lastSearchLng = lng

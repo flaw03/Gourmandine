@@ -55,7 +55,9 @@ fun ReservationCard(
             .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.clickable(onClick = onViewOnMap),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onViewOnMap),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Restaurant image
@@ -135,7 +137,7 @@ fun ReservationCard(
                     border = BorderStroke(1.dp, AppColors.OrangeAccent),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.OrangeAccent)
                 ) {
-                    Text("Calendrier", fontSize = 12.sp, maxLines = 1, fontWeight = FontWeight.SemiBold)
+                    Text("Agenda", fontSize = 12.sp, maxLines = 1, fontWeight = FontWeight.SemiBold)
                 }
                 Button(
                     onClick = onDelete,

@@ -108,17 +108,41 @@ class AuthViewModel(
     // ─── Edit profile ───────────────────────────────────────────────────────
 
     fun openEditProfile() {
-        val profile = _uiState.value.profile
-        _uiState.update {
-            it.copy(
-                editProfile = EditProfileState(
-                    isEditing = true,
-                    nom = profile.userNom ?: "",
-                    prenom = profile.userPrenom ?: "",
-                    phone = profile.userPhone ?: ""
-                ),
-                errorMessage = null
-            )
+        val uid = authRepository.currentUser?.uid ?: return
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        viewModelScope.launch {
+            userRepository.getUser(uid)
+                .onSuccess { user ->
+                    val nom = user?.nom ?: _uiState.value.profile.userNom ?: ""
+                    val prenom = user?.prenom ?: _uiState.value.profile.userPrenom ?: ""
+                    val phone = user?.phone?.ifBlank { null } ?: _uiState.value.profile.userPhone ?: ""
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            editProfile = EditProfileState(
+                                isEditing = true,
+                                nom = nom,
+                                prenom = prenom,
+                                phone = phone
+                            )
+                        )
+                    }
+                }
+                .onFailure {
+                    // Fallback sur les données déjà en mémoire
+                    val profile = _uiState.value.profile
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            editProfile = EditProfileState(
+                                isEditing = true,
+                                nom = profile.userNom ?: "",
+                                prenom = profile.userPrenom ?: "",
+                                phone = profile.userPhone ?: ""
+                            )
+                        )
+                    }
+                }
         }
     }
 

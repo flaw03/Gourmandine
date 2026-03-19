@@ -132,10 +132,19 @@ class PlacesRepository(private val placesClient: PlacesClient) {
                 .setIncludedType("restaurant")
                 .setMaxResultCount(20)
             if (lat != null && lng != null) {
-                builder.setLocationBias(CircularBounds.newInstance(LatLng(lat, lng), 50_000.0))
+                // Rayon large (1000 km) pour permettre la recherche par ville
+                builder.setLocationBias(CircularBounds.newInstance(LatLng(lat, lng), 1_000_000.0))
             }
             val response = placesClient.searchByText(builder.build()).await()
-            val restaurants = response.places.map { it.toRestaurant() }
+            // Filtre client-side : ne garder que les lieux alimentaires
+            val foodKeywords = listOf("restaurant", "food", "cafe", "bar", "bakery",
+                "meal_takeaway", "meal_delivery", "coffee", "bistro", "brasserie")
+            val restaurants = response.places
+                .filter { place ->
+                    val types = place.placeTypes ?: emptyList()
+                    types.any { type -> foodKeywords.any { kw -> type.contains(kw) } }
+                }
+                .map { it.toRestaurant() }
             CacheManager.putRestaurants(restaurants)
             PlacesResult.Success(restaurants)
         } catch (e: Exception) {

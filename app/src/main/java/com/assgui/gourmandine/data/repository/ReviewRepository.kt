@@ -35,10 +35,10 @@ class ReviewRepository {
             val source = if (fromCache) Source.CACHE else Source.DEFAULT
             val snapshot = reviewsCollection
                 .whereEqualTo("userId", userId)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get(source)
                 .await()
             val reviews = snapshot.toObjects(Review::class.java)
+                .sortedByDescending { it.createdAt }
             CacheManager.putUserReviews(userId, reviews)
             Result.success(reviews)
         } catch (e: Exception) {

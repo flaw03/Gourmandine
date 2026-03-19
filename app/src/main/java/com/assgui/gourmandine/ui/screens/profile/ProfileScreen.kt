@@ -252,7 +252,8 @@ private fun ProfileContent(
                 ProfileMenuItem(
                     icon = Icons.Default.Edit,
                     label = "Modifier mes informations",
-                    onClick = onEditProfile
+                    onClick = onEditProfile,
+                    isLoading = uiState.isLoading && !uiState.editProfile.isEditing
                 )
                 HorizontalDivider(color = AppColors.Divider, thickness = 1.dp)
                 ProfileMenuItem(
@@ -438,12 +439,13 @@ private fun EditProfileSheet(
 private fun ProfileMenuItem(
     icon: ImageVector,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLoading: Boolean = false
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = !isLoading, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -471,11 +473,19 @@ private fun ProfileMenuItem(
                 color = Color.Black
             )
         }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = AppColors.TextTertiary,
-            modifier = Modifier.size(20.dp)
-        )
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = AppColors.OrangeAccent,
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp
+            )
+        } else {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = AppColors.TextTertiary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
