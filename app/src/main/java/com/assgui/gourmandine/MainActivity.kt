@@ -104,7 +104,7 @@ private val navItems = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GourmandineApp() {
-    val homeViewModel: HomeViewModel = viewModel()
+    val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
     val reservationViewModel: ReservationViewModel = viewModel()
     val homeUiState by homeViewModel.uiState.collectAsState()
 
