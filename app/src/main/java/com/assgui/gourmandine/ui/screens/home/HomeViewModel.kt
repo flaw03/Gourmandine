@@ -4,7 +4,8 @@ import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.LocationManager
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -255,7 +256,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun onMyLocationClick() {
         val context = getApplication<Application>()
 
-        // Check permission
         if (ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -264,26 +264,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-        try {
-            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-
-            location?.let {
-                val userPosition = LatLng(it.latitude, it.longitude)
-                _uiState.update { state ->
-                    state.copy(
-                        cameraPosition = userPosition,
-                        cameraZoom = 15f,
-                        userLocation = userPosition
-                    )
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                location?.let {
+                    val userPosition = LatLng(it.latitude, it.longitude)
+                    _uiState.update { state ->
+                        state.copy(
+                            cameraPosition = userPosition,
+                            cameraZoom = 15f,
+                            userLocation = userPosition
+                        )
+                    }
+                    loadNearbyRestaurants(it.latitude, it.longitude)
                 }
-                loadNearbyRestaurants(it.latitude, it.longitude)
             }
-        } catch (e: SecurityException) {
-            // Permission was revoked
-        }
     }
 
     private fun loadReviews(restaurantId: String) {
